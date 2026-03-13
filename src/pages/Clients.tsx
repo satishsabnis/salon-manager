@@ -62,7 +62,7 @@ export default function Clients() {
         <button
           onClick={() => setShowModal(true)}
           style={{ backgroundColor: '#2E86AB' }}
-          className="flex items-center gap-2 text-white text-sm font-semibold px-4 py-2 rounded-lg hover:opacity-90 transition-opacity"
+          className="flex items-center gap-2 text-white text-sm font-semibold px-4 py-3 rounded-lg hover:opacity-90 transition-opacity min-h-[44px]"
         >
           <Plus size={16} />
           Add Client

@@ -99,7 +99,7 @@ export default function Dashboard() {
         >
           <div className="flex items-center gap-3">
             <button
-              className="md:hidden text-white"
+              className="md:hidden text-white p-2 -ml-2 rounded-lg min-h-[44px] min-w-[44px] flex items-center justify-center"
               onClick={() => setSidebarOpen(true)}
             >
               <Menu size={22} />
