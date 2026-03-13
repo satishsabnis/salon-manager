@@ -89,7 +89,7 @@ export default function StaffCalendar() {
       .select('id, staff_id, client_id, start_time, end_time, status, clients(name), services(name)')
       .gte('start_time', `${selectedDate}T00:00:00`)
       .lte('start_time', `${selectedDate}T23:59:59`)
-    setAppointments((data as Appointment[]) ?? [])
+    setAppointments((data as unknown as Appointment[]) ?? [])
     setLoading(false)
   }
 

@@ -106,7 +106,7 @@ export default function ClientProfile() {
       setBirthDate(c.birth_date ?? '')
       setPreferences(c.notes ?? '')
       setAvatarUrl(c.avatar_url ?? null)
-      setAppointments((apptRes.data as Appointment[]) ?? [])
+      setAppointments((apptRes.data as unknown as Appointment[]) ?? [])
       setVisitNotes(notesRes.data ?? [])
       setLoading(false)
     }

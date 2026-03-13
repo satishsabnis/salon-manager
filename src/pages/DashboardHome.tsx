@@ -66,7 +66,7 @@ export default function DashboardHome() {
           .not('birth_date', 'is', null),
       ])
 
-      const appts = (apptRes.data as TodayAppointment[]) ?? []
+      const appts = (apptRes.data as unknown as TodayAppointment[]) ?? []
       setTodayCount(appts.length)
       setTodayAppointments(appts)
       setClientCount(clientCountRes.count ?? 0)
