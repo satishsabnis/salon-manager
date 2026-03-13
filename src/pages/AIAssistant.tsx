@@ -2,7 +2,6 @@ import { useState, useRef, useEffect } from 'react'
 import { Send, Mic, MicOff, Plus, Sparkles } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 
-const ANTHROPIC_API_KEY = import.meta.env.VITE_ANTHROPIC_API_KEY as string
 
 interface Message {
   id: string
@@ -156,34 +155,19 @@ async function fetchSalonContext(query: string): Promise<string> {
   return parts.join('\n\n')
 }
 
-// ── Call Claude API ───────────────────────────────────────────────────────
+// ── Call Claude via Supabase Edge Function proxy ─────────────────────────
 async function callClaude(
   history: { role: 'user' | 'assistant'; content: string }[],
   systemPrompt: string
 ): Promise<string> {
-  const res = await fetch('https://api.anthropic.com/v1/messages', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'x-api-key': ANTHROPIC_API_KEY,
-      'anthropic-version': '2023-06-01',
-      'anthropic-dangerous-client-side-fetch-allows-browser': 'true',
-    },
-    body: JSON.stringify({
-      model: 'claude-sonnet-4-20250514',
-      max_tokens: 1000,
-      system: systemPrompt,
-      messages: history.slice(-10),
-    }),
+  const { data, error } = await supabase.functions.invoke('claude-proxy', {
+    body: { messages: history.slice(-10), systemPrompt },
   })
 
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}))
-    throw new Error((err as any).error?.message ?? `API error ${res.status}`)
-  }
+  if (error) throw new Error(error.message)
+  if (data?.error) throw new Error(data.error)
 
-  const data = await res.json()
-  return data.content?.[0]?.text ?? 'Sorry, I could not generate a response.'
+  return data?.text ?? 'Sorry, I could not generate a response.'
 }
 
 const WELCOME = "Hi! I'm your salon AI assistant. Ask me anything about your appointments, clients, staff performance, revenue, services, or promotions."
@@ -216,19 +200,6 @@ export default function AIAssistant() {
   const sendMessage = async () => {
     const text = input.trim()
     if (!text || loading) return
-
-    if (!ANTHROPIC_API_KEY || ANTHROPIC_API_KEY === 'your-anthropic-api-key-here') {
-      setMessages(prev => [
-        ...prev,
-        { id: Date.now().toString(), role: 'user', content: text },
-        {
-          id: (Date.now() + 1).toString(), role: 'assistant',
-          content: 'API key not configured. Please set VITE_ANTHROPIC_API_KEY in your .env file and restart the dev server.',
-        },
-      ])
-      setInput('')
-      return
-    }
 
     const userMsg: Message = { id: Date.now().toString(), role: 'user', content: text }
     setMessages(prev => [...prev, userMsg])
