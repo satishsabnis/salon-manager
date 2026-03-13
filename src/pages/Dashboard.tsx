@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { NavLink, useNavigate, Outlet } from 'react-router-dom'
-import { LayoutDashboard, CalendarDays, Users, BarChart2, CalendarRange, Menu, X, LogOut, ShieldCheck } from 'lucide-react'
+import { LayoutDashboard, CalendarDays, Users, BarChart2, CalendarRange, Menu, X, LogOut, ShieldCheck, Sparkles } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 
 const navItems = [
@@ -10,6 +10,7 @@ const navItems = [
   { label: 'Clients', to: '/dashboard/clients', icon: Users },
   { label: 'Analytics', to: '/dashboard/analytics', icon: BarChart2 },
   { label: 'Admin', to: '/dashboard/admin', icon: ShieldCheck },
+  { label: 'AI Assistant', to: '/dashboard/ai', icon: Sparkles },
 ]
 
 export default function Dashboard() {
