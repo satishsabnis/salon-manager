@@ -1,11 +1,12 @@
 import { useState } from 'react'
 import { NavLink, useNavigate, Outlet } from 'react-router-dom'
-import { LayoutDashboard, CalendarDays, Users, BarChart2, Menu, X, LogOut } from 'lucide-react'
+import { LayoutDashboard, CalendarDays, Users, BarChart2, CalendarRange, Menu, X, LogOut } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 
 const navItems = [
   { label: 'Dashboard', to: '/dashboard', icon: LayoutDashboard },
   { label: 'Appointments', to: '/dashboard/appointments', icon: CalendarDays },
+  { label: 'Calendar', to: '/dashboard/calendar', icon: CalendarRange },
   { label: 'Clients', to: '/dashboard/clients', icon: Users },
   { label: 'Analytics', to: '/dashboard/analytics', icon: BarChart2 },
 ]

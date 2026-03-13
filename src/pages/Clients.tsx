@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { Plus, Search, X, Mail, Phone, Scissors, DollarSign } from 'lucide-react'
 import { supabase } from '../lib/supabase'
@@ -22,6 +23,7 @@ interface FormValues {
 }
 
 export default function Clients() {
+  const navigate = useNavigate()
   const [clients, setClients] = useState<Client[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -106,7 +108,8 @@ export default function Clients() {
           {filtered.map((client) => (
             <div
               key={client.id}
-              className="bg-white rounded-xl shadow-sm border border-gray-100 p-5 hover:shadow-md transition-shadow"
+              onClick={() => navigate(`/dashboard/clients/${client.id}`)}
+              className="bg-white rounded-xl shadow-sm border border-gray-100 p-5 hover:shadow-md transition-shadow cursor-pointer"
             >
               {/* Name */}
               <div
@@ -143,7 +146,7 @@ export default function Clients() {
                 </div>
                 <div className="flex items-center gap-1.5 text-gray-500">
                   <DollarSign size={13} className="text-gray-400" />
-                  <span>${(client.total_spent ?? 0).toFixed(2)}</span>
+                  <span>AED {(client.total_spent ?? 0).toFixed(2)}</span>
                 </div>
               </div>
             </div>

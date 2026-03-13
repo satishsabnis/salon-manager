@@ -129,7 +129,7 @@ export default function Analytics() {
         />
         <SummaryCard
           label="Total Revenue"
-          value={`$${stats.totalRevenue.toFixed(2)}`}
+          value={`AED ${stats.totalRevenue.toFixed(2)}`}
           icon={<DollarSign size={20} />}
           accent="#2E86AB"
         />
@@ -205,7 +205,7 @@ export default function Analytics() {
                 <span className="text-sm text-gray-500">{client.visit_count ?? 0} visits</span>
                 {/* Spent */}
                 <span className="text-sm font-semibold" style={{ color: '#1E3A5F' }}>
-                  ${(client.total_spent ?? 0).toFixed(2)}
+                  AED {(client.total_spent ?? 0).toFixed(2)}
                 </span>
               </div>
             ))}

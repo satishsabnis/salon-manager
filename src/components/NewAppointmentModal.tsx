@@ -31,9 +31,14 @@ interface FormValues {
 interface Props {
   onClose: () => void
   onSaved: () => void
+  prefill?: {
+    staffId?: string
+    date?: string
+    time?: string
+  }
 }
 
-export default function NewAppointmentModal({ onClose, onSaved }: Props) {
+export default function NewAppointmentModal({ onClose, onSaved, prefill }: Props) {
   const [clients, setClients] = useState<Client[]>([])
   const [services, setServices] = useState<Service[]>([])
   const [staffList, setStaffList] = useState<Staff[]>([])
@@ -44,7 +49,13 @@ export default function NewAppointmentModal({ onClose, onSaved }: Props) {
     register,
     handleSubmit,
     formState: { errors, isSubmitting },
-  } = useForm<FormValues>()
+  } = useForm<FormValues>({
+    defaultValues: {
+      staff_id: prefill?.staffId ?? '',
+      date: prefill?.date ?? '',
+      time: prefill?.time ?? '',
+    },
+  })
 
   useEffect(() => {
     const fetchOptions = async () => {
