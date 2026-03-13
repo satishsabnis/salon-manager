@@ -62,11 +62,16 @@ function StaffModal({
       specialisation: specialisation.trim() || null,
       working_hours: workingHours.trim() || null,
     }
-    const { error: err } = initial
-      ? await supabase.from('staff').update(payload).eq('id', initial.id)
-      : await supabase.from('staff').insert(payload)
-    if (err) { setError(err.message); setSaving(false); return }
-    onSaved()
+    try {
+      const { error: err } = initial
+        ? await supabase.from('staff').update(payload).eq('id', initial.id)
+        : await supabase.from('staff').insert(payload)
+      if (err) { setError(err.message); setSaving(false); return }
+      onSaved()
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'An error occurred')
+      setSaving(false)
+    }
   }
 
   return (
@@ -86,19 +91,19 @@ function StaffModal({
           </div>
           <div>
             <label className={labelClass}>Email</label>
-            <input type="email" className={inputClass} value={email} onChange={(e) => setEmail(e.target.value)} placeholder="email@example.com" />
+            <input type="email" className={inputClass} value={email ?? ''} onChange={(e) => setEmail(e.target.value)} placeholder="email@example.com" />
           </div>
           <div>
             <label className={labelClass}>Role</label>
-            <input className={inputClass} value={role} onChange={(e) => setRole(e.target.value)} placeholder="e.g. Senior Stylist" />
+            <input className={inputClass} value={role ?? ''} onChange={(e) => setRole(e.target.value)} placeholder="e.g. Senior Stylist" />
           </div>
           <div>
             <label className={labelClass}>Specialisation</label>
-            <input className={inputClass} value={specialisation} onChange={(e) => setSpecialisation(e.target.value)} placeholder="e.g. Hair Colouring, Nails" />
+            <input className={inputClass} value={specialisation ?? ''} onChange={(e) => setSpecialisation(e.target.value)} placeholder="e.g. Hair Colouring, Nails" />
           </div>
           <div>
             <label className={labelClass}>Working Hours</label>
-            <input className={inputClass} value={workingHours} onChange={(e) => setWorkingHours(e.target.value)} placeholder="e.g. Mon–Fri 9am–6pm" />
+            <input className={inputClass} value={workingHours ?? ''} onChange={(e) => setWorkingHours(e.target.value)} placeholder="e.g. Mon–Fri 9am–6pm" />
           </div>
           {error && <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">{error}</p>}
           <div className="flex gap-3 pt-1">
@@ -129,8 +134,8 @@ function ServiceModal({
   onSaved: () => void
 }) {
   const [name, setName] = useState(initial?.name ?? '')
-  const [duration, setDuration] = useState(String(initial?.duration_mins ?? ''))
-  const [price, setPrice] = useState(String(initial?.price ?? ''))
+  const [duration, setDuration] = useState(initial?.duration_mins != null ? String(initial.duration_mins) : '')
+  const [price, setPrice] = useState(initial?.price != null ? String(initial.price) : '')
   const [category, setCategory] = useState(initial?.category ?? '')
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
@@ -141,15 +146,20 @@ function ServiceModal({
     setError('')
     const payload = {
       name: name.trim(),
-      duration_mins: duration ? parseInt(duration) : null,
+      duration_mins: duration ? parseInt(duration, 10) : null,
       price: price ? parseFloat(price) : null,
       category: category.trim() || null,
     }
-    const { error: err } = initial
-      ? await supabase.from('services').update(payload).eq('id', initial.id)
-      : await supabase.from('services').insert(payload)
-    if (err) { setError(err.message); setSaving(false); return }
-    onSaved()
+    try {
+      const { error: err } = initial
+        ? await supabase.from('services').update(payload).eq('id', initial.id)
+        : await supabase.from('services').insert(payload)
+      if (err) { setError(err.message); setSaving(false); return }
+      onSaved()
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'An error occurred')
+      setSaving(false)
+    }
   }
 
   return (
@@ -226,14 +236,28 @@ function DeleteConfirm({ label, onConfirm, onCancel }: { label: string; onConfir
 function StaffTab() {
   const [staff, setStaff] = useState<StaffRow[]>([])
   const [loading, setLoading] = useState(true)
+  const [fetchError, setFetchError] = useState('')
   const [modalOpen, setModalOpen] = useState(false)
   const [editTarget, setEditTarget] = useState<StaffRow | undefined>()
   const [deleteTarget, setDeleteTarget] = useState<StaffRow | null>(null)
 
   const fetchStaff = async () => {
-    const { data } = await supabase.from('staff').select('id, name, email, role, specialisation, working_hours').order('name')
-    setStaff((data as StaffRow[]) ?? [])
-    setLoading(false)
+    setFetchError('')
+    try {
+      const { data, error } = await supabase
+        .from('staff')
+        .select('id, name, email, role, specialisation, working_hours')
+        .order('name')
+      if (error) {
+        setFetchError(error.message)
+      } else {
+        setStaff((data as StaffRow[]) ?? [])
+      }
+    } catch (e) {
+      setFetchError(e instanceof Error ? e.message : 'Failed to load staff')
+    } finally {
+      setLoading(false)
+    }
   }
 
   useEffect(() => { fetchStaff() }, [])
@@ -243,12 +267,22 @@ function StaffTab() {
 
   const handleDelete = async () => {
     if (!deleteTarget) return
-    await supabase.from('staff').delete().eq('id', deleteTarget.id)
+    try {
+      await supabase.from('staff').delete().eq('id', deleteTarget.id)
+    } catch {
+      // ignore delete errors silently
+    }
     setDeleteTarget(null)
     fetchStaff()
   }
 
   if (loading) return <div className="py-12 text-center text-gray-400 text-sm">Loading...</div>
+
+  if (fetchError) return (
+    <div className="bg-red-50 border border-red-200 text-red-600 text-sm rounded-lg px-4 py-3">
+      Error loading staff: {fetchError}
+    </div>
+  )
 
   return (
     <div>
@@ -277,7 +311,7 @@ function StaffTab() {
             {staff.length === 0 ? (
               <tr><td colSpan={6} className="px-5 py-10 text-center text-gray-400">No staff added yet.</td></tr>
             ) : staff.map((s, i) => (
-              <tr key={s.id} className={`border-t border-gray-100 ${i % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'}`}>
+              <tr key={s.id} className={`border-t border-gray-100 ${i % 2 === 0 ? 'bg-white' : 'bg-gray-50'}`}>
                 <td className="px-5 py-3 font-medium text-gray-800">{s.name}</td>
                 <td className="px-5 py-3 text-gray-500 hidden sm:table-cell">{s.email ?? '—'}</td>
                 <td className="px-5 py-3 text-gray-500 hidden md:table-cell">{s.role ?? '—'}</td>
@@ -317,14 +351,28 @@ function StaffTab() {
 function ServicesTab() {
   const [services, setServices] = useState<ServiceRow[]>([])
   const [loading, setLoading] = useState(true)
+  const [fetchError, setFetchError] = useState('')
   const [modalOpen, setModalOpen] = useState(false)
   const [editTarget, setEditTarget] = useState<ServiceRow | undefined>()
   const [deleteTarget, setDeleteTarget] = useState<ServiceRow | null>(null)
 
   const fetchServices = async () => {
-    const { data } = await supabase.from('services').select('id, name, duration_mins, price, category').order('name')
-    setServices((data as ServiceRow[]) ?? [])
-    setLoading(false)
+    setFetchError('')
+    try {
+      const { data, error } = await supabase
+        .from('services')
+        .select('id, name, duration_mins, price, category')
+        .order('name')
+      if (error) {
+        setFetchError(error.message)
+      } else {
+        setServices((data as ServiceRow[]) ?? [])
+      }
+    } catch (e) {
+      setFetchError(e instanceof Error ? e.message : 'Failed to load services')
+    } finally {
+      setLoading(false)
+    }
   }
 
   useEffect(() => { fetchServices() }, [])
@@ -334,12 +382,22 @@ function ServicesTab() {
 
   const handleDelete = async () => {
     if (!deleteTarget) return
-    await supabase.from('services').delete().eq('id', deleteTarget.id)
+    try {
+      await supabase.from('services').delete().eq('id', deleteTarget.id)
+    } catch {
+      // ignore delete errors silently
+    }
     setDeleteTarget(null)
     fetchServices()
   }
 
   if (loading) return <div className="py-12 text-center text-gray-400 text-sm">Loading...</div>
+
+  if (fetchError) return (
+    <div className="bg-red-50 border border-red-200 text-red-600 text-sm rounded-lg px-4 py-3">
+      Error loading services: {fetchError}
+    </div>
+  )
 
   return (
     <div>
@@ -367,7 +425,7 @@ function ServicesTab() {
             {services.length === 0 ? (
               <tr><td colSpan={5} className="px-5 py-10 text-center text-gray-400">No services added yet.</td></tr>
             ) : services.map((s, i) => (
-              <tr key={s.id} className={`border-t border-gray-100 ${i % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'}`}>
+              <tr key={s.id} className={`border-t border-gray-100 ${i % 2 === 0 ? 'bg-white' : 'bg-gray-50'}`}>
                 <td className="px-5 py-3 font-medium text-gray-800">{s.name}</td>
                 <td className="px-5 py-3 text-gray-500 hidden sm:table-cell">{s.category ?? '—'}</td>
                 <td className="px-5 py-3 text-gray-500">{s.duration_mins != null ? `${s.duration_mins} min` : '—'}</td>
@@ -407,6 +465,7 @@ function SettingsTab() {
   const [settings, setSettings] = useState<Settings>({
     salon_name: '', address: '', phone: '', email: '', opening_hours: '',
   })
+  const [settingsId, setSettingsId] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
@@ -414,30 +473,48 @@ function SettingsTab() {
 
   useEffect(() => {
     const fetchSettings = async () => {
-      const { data } = await supabase.from('settings').select('*').limit(1).single()
-      if (data) {
-        setSettings({
-          salon_name: data.salon_name ?? '',
-          address: data.address ?? '',
-          phone: data.phone ?? '',
-          email: data.email ?? '',
-          opening_hours: data.opening_hours ?? '',
-        })
+      try {
+        // Use maybeSingle() — returns null (not an error) when 0 rows exist
+        const { data, error: fetchErr } = await supabase
+          .from('settings')
+          .select('*')
+          .limit(1)
+          .maybeSingle()
+        if (fetchErr) {
+          // Table may not exist yet — silently ignore, start with blank form
+          console.warn('Settings fetch error:', fetchErr.message)
+        } else if (data) {
+          setSettingsId((data as { id: string }).id ?? null)
+          setSettings({
+            salon_name: (data as Settings & { id: string }).salon_name ?? '',
+            address: (data as Settings & { id: string }).address ?? '',
+            phone: (data as Settings & { id: string }).phone ?? '',
+            email: (data as Settings & { id: string }).email ?? '',
+            opening_hours: (data as Settings & { id: string }).opening_hours ?? '',
+          })
+        }
+      } catch (e) {
+        console.warn('Settings fetch exception:', e)
+      } finally {
+        setLoading(false)
       }
-      setLoading(false)
     }
     fetchSettings()
   }, [])
 
   const handleSave = async () => {
     setSaving(true); setError(''); setSaved(false)
-    const { data: existing } = await supabase.from('settings').select('id').limit(1).single()
-    const { error: err } = existing
-      ? await supabase.from('settings').update(settings).eq('id', existing.id)
-      : await supabase.from('settings').insert(settings)
-    if (err) { setError(err.message); setSaving(false); return }
-    setSaving(false); setSaved(true)
-    setTimeout(() => setSaved(false), 3000)
+    try {
+      const { error: err } = settingsId
+        ? await supabase.from('settings').update(settings).eq('id', settingsId)
+        : await supabase.from('settings').insert(settings)
+      if (err) { setError(err.message); setSaving(false); return }
+      setSaving(false); setSaved(true)
+      setTimeout(() => setSaved(false), 3000)
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Save failed')
+      setSaving(false)
+    }
   }
 
   if (loading) return <div className="py-12 text-center text-gray-400 text-sm">Loading...</div>
