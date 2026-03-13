@@ -173,7 +173,7 @@ export default function Analytics() {
               />
               <Tooltip
                 contentStyle={{ fontSize: 13, borderRadius: 8, border: '1px solid #e5e7eb' }}
-                formatter={(value: number) => [value, 'Appointments']}
+                formatter={(value) => [value, 'Appointments']}
               />
               <Bar dataKey="count" fill="#2E86AB" radius={[4, 4, 0, 0]} />
             </BarChart>
