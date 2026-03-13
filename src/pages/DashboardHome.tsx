@@ -2,16 +2,10 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { CalendarDays, Users } from 'lucide-react'
 import { supabase } from '../lib/supabase'
+import AppointmentDetailModal, { type AppointmentDetail } from '../components/AppointmentDetailModal'
 
-interface TodayAppointment {
-  id: string
-  start_time: string
-  status: 'confirmed' | 'cancelled' | 'completed'
-  client_id: string
-  staff_id: string
-  clients: { name: string } | null
-  services: { name: string } | null
-  staff: { id: string; name: string } | null
+interface TodayAppointment extends AppointmentDetail {
+  // AppointmentDetail already has all required fields
 }
 
 interface StaffMember {
@@ -36,6 +30,7 @@ export default function DashboardHome() {
   const [staffList, setStaffList] = useState<StaffMember[]>([])
   const [birthdayClients, setBirthdayClients] = useState<BirthdayClient[]>([])
   const [loading, setLoading] = useState(true)
+  const [selectedAppt, setSelectedAppt] = useState<TodayAppointment | null>(null)
 
   useEffect(() => {
     const fetchAll = async () => {
@@ -48,7 +43,7 @@ export default function DashboardHome() {
       const [apptRes, clientCountRes, monthApptRes, staffRes, birthdayRes] = await Promise.all([
         supabase
           .from('appointments')
-          .select('id, start_time, status, client_id, staff_id, clients(name), services(name), staff(id, name)')
+          .select('id, start_time, end_time, status, client_id, service_id, staff_id, notes, clients(id, name), services(name, duration_mins, price), staff(id, name)')
           .gte('start_time', todayStart)
           .lt('start_time', todayEnd)
           .order('start_time', { ascending: true }),
@@ -78,7 +73,6 @@ export default function DashboardHome() {
 
       setStaffList((staffRes.data as StaffMember[]) ?? [])
 
-      // Filter clients whose birthday falls within the next 30 days
       const today = new Date()
       today.setHours(0, 0, 0, 0)
       const in30 = new Date(today)
@@ -101,6 +95,13 @@ export default function DashboardHome() {
 
     fetchAll()
   }, [])
+
+  const handleApptUpdated = (updated: AppointmentDetail) => {
+    setTodayAppointments((prev) =>
+      prev.map((a) => (a.id === updated.id ? (updated as TodayAppointment) : a))
+    )
+    setSelectedAppt(updated as TodayAppointment)
+  }
 
   if (loading) {
     return <div className="flex justify-center py-20 text-gray-400 text-sm">Loading...</div>
@@ -155,6 +156,7 @@ export default function DashboardHome() {
                         key={appt.id}
                         appt={appt}
                         onClientClick={() => navigate(`/dashboard/clients/${appt.client_id}`)}
+                        onRowClick={() => setSelectedAppt(appt)}
                       />
                     ))}
                   </div>
@@ -204,27 +206,26 @@ export default function DashboardHome() {
           </div>
         )}
       </div>
+
+      {/* Appointment detail modal */}
+      {selectedAppt && (
+        <AppointmentDetailModal
+          appt={selectedAppt}
+          onClose={() => setSelectedAppt(null)}
+          onUpdated={handleApptUpdated}
+        />
+      )}
     </div>
   )
 }
 
-function SummaryCard({
-  icon,
-  label,
-  value,
-  color,
-}: {
-  icon: React.ReactNode
-  label: string
-  value: string
-  color: string
+function SummaryCard({ icon, label, value, color }: {
+  icon: React.ReactNode; label: string; value: string; color: string
 }) {
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5 flex items-center gap-4">
-      <div
-        className="w-11 h-11 rounded-full flex items-center justify-center text-white shrink-0"
-        style={{ backgroundColor: color }}
-      >
+      <div className="w-11 h-11 rounded-full flex items-center justify-center text-white shrink-0"
+        style={{ backgroundColor: color }}>
         {icon}
       </div>
       <div>
@@ -235,23 +236,23 @@ function SummaryCard({
   )
 }
 
-function AppointmentRow({
-  appt,
-  onClientClick,
-}: {
+function AppointmentRow({ appt, onClientClick, onRowClick }: {
   appt: TodayAppointment
   onClientClick: () => void
+  onRowClick: () => void
 }) {
   const time = new Date(appt.start_time).toLocaleTimeString('en-US', {
-    hour: 'numeric',
-    minute: '2-digit',
+    hour: 'numeric', minute: '2-digit',
   })
 
   return (
-    <div className="flex items-center gap-3 bg-gray-50 rounded-lg px-3 py-2.5">
+    <div
+      onClick={onRowClick}
+      className="flex items-center gap-3 bg-gray-50 rounded-lg px-3 py-2.5 cursor-pointer hover:bg-blue-50 transition-colors"
+    >
       <div className="flex-1 min-w-0">
         <button
-          onClick={onClientClick}
+          onClick={(e) => { e.stopPropagation(); onClientClick() }}
           className="text-sm font-semibold hover:underline truncate block text-left"
           style={{ color: '#2E86AB' }}
         >
@@ -261,15 +262,13 @@ function AppointmentRow({
           {appt.services?.name ?? '—'} · {time}
         </p>
       </div>
-      <span
-        className={`text-xs font-medium px-2.5 py-0.5 rounded-full shrink-0 ${
-          appt.status === 'confirmed'
-            ? 'bg-green-100 text-green-700'
-            : appt.status === 'completed'
-            ? 'bg-blue-100 text-blue-700'
-            : 'bg-red-100 text-red-600'
-        }`}
-      >
+      <span className={`text-xs font-medium px-2.5 py-0.5 rounded-full shrink-0 ${
+        appt.status === 'confirmed'
+          ? 'bg-green-100 text-green-700'
+          : appt.status === 'completed'
+          ? 'bg-blue-100 text-blue-700'
+          : 'bg-red-100 text-red-600'
+      }`}>
         {appt.status}
       </span>
     </div>

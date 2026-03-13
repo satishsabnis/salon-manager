@@ -7,6 +7,7 @@ import ClientProfile from './pages/ClientProfile'
 import Analytics from './pages/Analytics'
 import DashboardHome from './pages/DashboardHome'
 import StaffCalendar from './pages/StaffCalendar'
+import Admin from './pages/Admin'
 
 function App() {
   return (
@@ -22,6 +23,7 @@ function App() {
           <Route path="clients" element={<Clients />} />
           <Route path="clients/:id" element={<ClientProfile />} />
           <Route path="analytics" element={<Analytics />} />
+          <Route path="admin" element={<Admin />} />
         </Route>
       </Routes>
     </BrowserRouter>

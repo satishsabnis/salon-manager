@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { NavLink, useNavigate, Outlet } from 'react-router-dom'
-import { LayoutDashboard, CalendarDays, Users, BarChart2, CalendarRange, Menu, X, LogOut } from 'lucide-react'
+import { LayoutDashboard, CalendarDays, Users, BarChart2, CalendarRange, Menu, X, LogOut, ShieldCheck } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 
 const navItems = [
@@ -9,6 +9,7 @@ const navItems = [
   { label: 'Calendar', to: '/dashboard/calendar', icon: CalendarRange },
   { label: 'Clients', to: '/dashboard/clients', icon: Users },
   { label: 'Analytics', to: '/dashboard/analytics', icon: BarChart2 },
+  { label: 'Admin', to: '/dashboard/admin', icon: ShieldCheck },
 ]
 
 export default function Dashboard() {
@@ -109,7 +110,8 @@ export default function Dashboard() {
           </div>
           <button
             onClick={handleLogout}
-            className="flex items-center gap-2 text-blue-100 hover:text-white text-sm transition-colors"
+            style={{ backgroundColor: '#dc2626', color: 'white', padding: '8px 16px', borderRadius: '8px', fontWeight: 'bold', border: 'none', cursor: 'pointer' }}
+            className="flex items-center gap-2 text-sm"
           >
             <LogOut size={16} />
             <span className="hidden sm:inline">Logout</span>
