@@ -436,25 +436,25 @@ export default function AppointmentDetailModal({ appt, onClose, onUpdated }: Pro
               <div className="grid grid-cols-2 gap-2 p-4">
                 <button
                   onClick={handleComplete}
-                  className="bg-green-500 text-white py-3 px-4 rounded-lg font-semibold text-sm hover:bg-green-600 transition-colors"
+                  className="bg-green-600 text-white py-3 px-4 rounded-lg font-bold text-base w-full"
                 >
                   ✓ Complete
                 </button>
                 <button
                   onClick={handleReschedule}
-                  className="bg-blue-500 text-white py-3 px-4 rounded-lg font-semibold text-sm hover:bg-blue-600 transition-colors"
+                  className="bg-blue-600 text-white py-3 px-4 rounded-lg font-bold text-base w-full"
                 >
                   📅 Reschedule
                 </button>
                 <button
                   onClick={handlePayment}
-                  className="bg-yellow-500 text-white py-3 px-4 rounded-lg font-semibold text-sm hover:bg-yellow-600 transition-colors"
+                  className="bg-yellow-600 text-white py-3 px-4 rounded-lg font-bold text-base w-full"
                 >
                   💰 Payment
                 </button>
                 <button
                   onClick={handleCancel}
-                  className="bg-red-500 text-white py-3 px-4 rounded-lg font-semibold text-sm hover:bg-red-600 transition-colors"
+                  className="bg-red-600 text-white py-3 px-4 rounded-lg font-bold text-base w-full"
                 >
                   ✗ Cancel
                 </button>
