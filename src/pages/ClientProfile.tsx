@@ -25,8 +25,13 @@ interface Appointment {
   status: 'confirmed' | 'cancelled' | 'completed'
   services: { name: string } | null
   staff: { name: string } | null
-  before_photo_url: string | null
-  after_photo_url: string | null
+}
+
+interface AppointmentPhoto {
+  id: string
+  appointment_id: string
+  photo_type: 'before' | 'after'
+  photo_url: string
 }
 
 interface VisitNote {
@@ -48,6 +53,7 @@ export default function ClientProfile() {
 
   const [client, setClient] = useState<Client | null>(null)
   const [appointments, setAppointments] = useState<Appointment[]>([])
+  const [apptPhotos, setApptPhotos] = useState<Record<string, AppointmentPhoto[]>>({})
   const [visitNotes, setVisitNotes] = useState<VisitNote[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -70,7 +76,7 @@ export default function ClientProfile() {
 
   useEffect(() => {
     const fetchAll = async () => {
-      const [clientRes, apptRes, notesRes] = await Promise.all([
+      const [clientRes, apptRes, notesRes, photosRes] = await Promise.all([
         supabase
           .from('clients')
           .select(
@@ -80,7 +86,7 @@ export default function ClientProfile() {
           .single(),
         supabase
           .from('appointments')
-          .select('id, start_time, status, services(name), staff(name), before_photo_url, after_photo_url')
+          .select('id, start_time, status, services(name), staff(name)')
           .eq('client_id', id)
           .order('start_time', { ascending: false }),
         supabase
@@ -88,6 +94,10 @@ export default function ClientProfile() {
           .select('id, note, created_at')
           .eq('client_id', id)
           .order('created_at', { ascending: false }),
+        supabase
+          .from('appointment_photos')
+          .select('id, appointment_id, photo_type, photo_url')
+          .eq('client_id', id),
       ])
 
       if (clientRes.error) {
@@ -108,6 +118,15 @@ export default function ClientProfile() {
       setAvatarUrl(c.avatar_url ?? null)
       setAppointments((apptRes.data as unknown as Appointment[]) ?? [])
       setVisitNotes(notesRes.data ?? [])
+
+      // Group photos by appointment_id
+      const grouped: Record<string, AppointmentPhoto[]> = {}
+      for (const photo of (photosRes.data ?? []) as AppointmentPhoto[]) {
+        if (!grouped[photo.appointment_id]) grouped[photo.appointment_id] = []
+        grouped[photo.appointment_id].push(photo)
+      }
+      setApptPhotos(grouped)
+
       setLoading(false)
     }
 
@@ -117,7 +136,7 @@ export default function ClientProfile() {
   const handleAvatarUpload = async (file: File) => {
     setUploadingAvatar(true)
     const ext = file.name.split('.').pop()
-    const path = `avatars/${id}.${ext}`
+    const path = `avatars/${id}/${Date.now()}.${ext}`
     const { error: upErr } = await supabase.storage
       .from('salon-photos')
       .upload(path, file, { upsert: true })
@@ -152,17 +171,28 @@ export default function ClientProfile() {
   const handlePhotoUpload = async (apptId: string, type: 'before' | 'after', file: File) => {
     setPhotoUploading((prev) => ({ ...prev, [apptId]: type }))
     const ext = file.name.split('.').pop()
-    const path = `before-after/${apptId}-${type}.${ext}`
+    const path = `appointments/${apptId}/${Date.now()}.${ext}`
     const { error: upErr } = await supabase.storage
       .from('salon-photos')
       .upload(path, file, { upsert: true })
     if (!upErr) {
       const { data: { publicUrl } } = supabase.storage.from('salon-photos').getPublicUrl(path)
-      const col = type === 'before' ? 'before_photo_url' : 'after_photo_url'
-      await supabase.from('appointments').update({ [col]: publicUrl }).eq('id', apptId)
-      setAppointments((prev) =>
-        prev.map((a) => (a.id === apptId ? { ...a, [col]: publicUrl } : a))
-      )
+      const { data: inserted } = await supabase
+        .from('appointment_photos')
+        .insert({
+          appointment_id: apptId,
+          client_id: id,
+          photo_type: type,
+          photo_url: publicUrl,
+        })
+        .select('id, appointment_id, photo_type, photo_url')
+        .single()
+      if (inserted) {
+        setApptPhotos((prev) => ({
+          ...prev,
+          [apptId]: [...(prev[apptId] ?? []), inserted as AppointmentPhoto],
+        }))
+      }
     }
     setPhotoUploading((prev) => ({ ...prev, [apptId]: null }))
   }
@@ -251,19 +281,27 @@ export default function ClientProfile() {
                     {initials}
                   </div>
                 )}
-                {isEditing && (
-                  <button
-                    onClick={() => avatarInputRef.current?.click()}
-                    disabled={uploadingAvatar}
-                    className="absolute bottom-0 right-0 w-7 h-7 bg-white border border-gray-200 rounded-full flex items-center justify-center shadow-sm hover:bg-gray-50 transition-colors disabled:opacity-50"
-                  >
-                    {uploadingAvatar ? (
-                      <span className="text-[9px] text-gray-400">…</span>
-                    ) : (
-                      <Camera size={13} className="text-gray-500" />
-                    )}
-                  </button>
-                )}
+                <button
+                  onClick={() => avatarInputRef.current?.click()}
+                  disabled={uploadingAvatar}
+                  className="absolute bottom-0 right-0 w-7 h-7 bg-white border border-gray-200 rounded-full flex items-center justify-center shadow-sm hover:bg-gray-50 transition-colors disabled:opacity-50"
+                >
+                  {uploadingAvatar ? (
+                    <svg
+                      className="animate-spin text-gray-400"
+                      width={13}
+                      height={13}
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth={2.5}
+                    >
+                      <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" />
+                    </svg>
+                  ) : (
+                    <Camera size={13} className="text-gray-500" />
+                  )}
+                </button>
                 <input
                   ref={avatarInputRef}
                   type="file"
@@ -471,6 +509,7 @@ export default function ClientProfile() {
                   <AppointmentCard
                     key={appt.id}
                     appt={appt}
+                    photos={apptPhotos[appt.id] ?? []}
                     uploading={photoUploading[appt.id] ?? null}
                     onPhotoUpload={handlePhotoUpload}
                   />
@@ -489,6 +528,7 @@ export default function ClientProfile() {
                   <AppointmentCard
                     key={appt.id}
                     appt={appt}
+                    photos={apptPhotos[appt.id] ?? []}
                     uploading={photoUploading[appt.id] ?? null}
                     onPhotoUpload={handlePhotoUpload}
                   />
@@ -538,104 +578,167 @@ function ReadField({ label, value }: { label: string; value: string }) {
 
 function AppointmentCard({
   appt,
+  photos,
   uploading,
   onPhotoUpload,
 }: {
   appt: Appointment
+  photos: AppointmentPhoto[]
   uploading: 'before' | 'after' | null
   onPhotoUpload: (apptId: string, type: 'before' | 'after', file: File) => void
 }) {
   const beforeInputRef = useRef<HTMLInputElement>(null)
   const afterInputRef = useRef<HTMLInputElement>(null)
+  const [lightboxUrl, setLightboxUrl] = useState<string | null>(null)
   const date = new Date(appt.start_time)
 
+  const beforePhotos = photos.filter((p) => p.photo_type === 'before')
+  const afterPhotos = photos.filter((p) => p.photo_type === 'after')
+
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
-      {/* Header row */}
-      <div className="flex items-center gap-4">
-        <div className="text-center w-12 shrink-0">
-          <p className="text-xs text-gray-400 uppercase">
-            {date.toLocaleDateString('en-US', { month: 'short' })}
-          </p>
-          <p className="text-xl font-bold" style={{ color: '#1E3A5F' }}>
-            {date.getDate()}
-          </p>
-          <p className="text-xs text-gray-400">{date.getFullYear()}</p>
-        </div>
-        <div className="flex-1 min-w-0">
-          <p className="font-semibold text-gray-800 text-sm">
-            {appt.services?.name ?? 'Unknown service'}
-          </p>
-          <p className="text-xs text-gray-500 mt-0.5">
-            with {appt.staff?.name ?? 'Unknown staff'}
-          </p>
-        </div>
-        <span
-          className={`text-xs font-medium px-2.5 py-1 rounded-full shrink-0 ${
-            appt.status === 'completed'
-              ? 'bg-green-100 text-green-700'
-              : appt.status === 'cancelled'
-              ? 'bg-red-100 text-red-600'
-              : 'bg-blue-100 text-blue-700'
-          }`}
+    <>
+      {/* Lightbox */}
+      {lightboxUrl && (
+        <div
+          className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4"
+          onClick={() => setLightboxUrl(null)}
         >
-          {appt.status}
-        </span>
-      </div>
+          <button
+            className="absolute top-4 right-4 text-white/70 hover:text-white transition-colors"
+            onClick={() => setLightboxUrl(null)}
+          >
+            <X size={28} />
+          </button>
+          <img
+            src={lightboxUrl}
+            alt="Full size"
+            className="max-w-full max-h-full rounded-lg object-contain"
+            onClick={(e) => e.stopPropagation()}
+          />
+        </div>
+      )}
 
-      {/* Before / After photos */}
-      <div className="mt-3 pt-3 border-t border-gray-50 grid grid-cols-2 gap-3">
-        {(['before', 'after'] as const).map((type) => {
-          const url = type === 'before' ? appt.before_photo_url : appt.after_photo_url
-          const ref = type === 'before' ? beforeInputRef : afterInputRef
-          const isUploading = uploading === type
+      <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
+        {/* Header row */}
+        <div className="flex items-center gap-4">
+          <div className="text-center w-12 shrink-0">
+            <p className="text-xs text-gray-400 uppercase">
+              {date.toLocaleDateString('en-US', { month: 'short' })}
+            </p>
+            <p className="text-xl font-bold" style={{ color: '#1E3A5F' }}>
+              {date.getDate()}
+            </p>
+            <p className="text-xs text-gray-400">{date.getFullYear()}</p>
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="font-semibold text-gray-800 text-sm">
+              {appt.services?.name ?? 'Unknown service'}
+            </p>
+            <p className="text-xs text-gray-500 mt-0.5">
+              with {appt.staff?.name ?? 'Unknown staff'}
+            </p>
+          </div>
+          <span
+            className={`text-xs font-medium px-2.5 py-1 rounded-full shrink-0 ${
+              appt.status === 'completed'
+                ? 'bg-green-100 text-green-700'
+                : appt.status === 'cancelled'
+                ? 'bg-red-100 text-red-600'
+                : 'bg-blue-100 text-blue-700'
+            }`}
+          >
+            {appt.status}
+          </span>
+        </div>
 
-          return (
-            <div key={type}>
-              {url ? (
-                <div className="relative group">
-                  <img
-                    src={url}
-                    alt={type}
-                    className="w-full h-28 object-cover rounded-lg"
-                  />
-                  <span className="absolute top-1.5 left-1.5 bg-black/50 text-white text-[10px] font-semibold px-1.5 py-0.5 rounded capitalize">
-                    {type}
-                  </span>
-                  <button
-                    onClick={() => ref.current?.click()}
-                    className="absolute inset-0 rounded-lg bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100"
-                  >
-                    <Camera size={18} className="text-white" />
-                  </button>
-                </div>
-              ) : (
+        {/* Photo section */}
+        <div className="mt-3 pt-3 border-t border-gray-50">
+          {/* Upload buttons */}
+          <div className="flex gap-2 mb-3">
+            {(['before', 'after'] as const).map((type) => {
+              const ref = type === 'before' ? beforeInputRef : afterInputRef
+              const isUploading = uploading === type
+              return (
                 <button
+                  key={type}
                   onClick={() => ref.current?.click()}
                   disabled={isUploading}
-                  className="w-full h-28 border-2 border-dashed border-gray-200 rounded-lg flex flex-col items-center justify-center gap-1 text-gray-400 hover:border-[#2E86AB] hover:text-[#2E86AB] transition-colors disabled:opacity-50"
+                  className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border border-gray-200 text-gray-600 hover:border-[#2E86AB] hover:text-[#2E86AB] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  <Camera size={16} />
-                  <span className="text-xs font-medium capitalize">
-                    {isUploading ? 'Uploading...' : `Add ${type} Photo`}
-                  </span>
+                  {isUploading ? (
+                    <svg
+                      className="animate-spin text-current"
+                      width={12}
+                      height={12}
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth={2.5}
+                    >
+                      <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" />
+                    </svg>
+                  ) : (
+                    <Camera size={12} />
+                  )}
+                  {isUploading ? 'Uploading...' : `📷 ${type.charAt(0).toUpperCase() + type.slice(1)}`}
                 </button>
+              )
+            })}
+            <input
+              ref={beforeInputRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={(e) => {
+                const file = e.target.files?.[0]
+                if (file) onPhotoUpload(appt.id, 'before', file)
+                e.target.value = ''
+              }}
+            />
+            <input
+              ref={afterInputRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={(e) => {
+                const file = e.target.files?.[0]
+                if (file) onPhotoUpload(appt.id, 'after', file)
+                e.target.value = ''
+              }}
+            />
+          </div>
+
+          {/* Thumbnails */}
+          {(beforePhotos.length > 0 || afterPhotos.length > 0) && (
+            <div className="space-y-2">
+              {([['before', beforePhotos], ['after', afterPhotos]] as const).map(([type, list]) =>
+                list.length === 0 ? null : (
+                  <div key={type}>
+                    <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide mb-1.5">
+                      {type}
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                      {list.map((photo) => (
+                        <button
+                          key={photo.id}
+                          onClick={() => setLightboxUrl(photo.photo_url)}
+                          className="w-20 h-20 rounded-lg overflow-hidden border border-gray-100 hover:border-[#2E86AB] hover:ring-2 hover:ring-[#2E86AB]/30 transition-all shrink-0 focus:outline-none"
+                        >
+                          <img
+                            src={photo.photo_url}
+                            alt={type}
+                            className="w-full h-full object-cover"
+                          />
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )
               )}
-              <input
-                ref={ref}
-                type="file"
-                accept="image/*"
-                className="hidden"
-                onChange={(e) => {
-                  const file = e.target.files?.[0]
-                  if (file) onPhotoUpload(appt.id, type, file)
-                  e.target.value = ''
-                }}
-              />
             </div>
-          )
-        })}
+          )}
+        </div>
       </div>
-    </div>
+    </>
   )
 }
