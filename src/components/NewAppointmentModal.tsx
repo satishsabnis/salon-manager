@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
-import { X } from 'lucide-react'
+import { X, Clock, DollarSign } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 
 interface Client {
@@ -12,6 +12,7 @@ interface Service {
   id: string
   name: string
   duration_mins: number
+  price: number | null
 }
 
 interface Staff {
@@ -21,7 +22,6 @@ interface Staff {
 
 interface FormValues {
   client_id: string
-  service_id: string
   staff_id: string
   date: string
   time: string
@@ -44,6 +44,8 @@ export default function NewAppointmentModal({ onClose, onSaved, prefill }: Props
   const [staffList, setStaffList] = useState<Staff[]>([])
   const [loadingOptions, setLoadingOptions] = useState(true)
   const [saveError, setSaveError] = useState('')
+  const [selectedIds, setSelectedIds] = useState<string[]>([])
+  const [serviceError, setServiceError] = useState('')
 
   const {
     register,
@@ -61,32 +63,47 @@ export default function NewAppointmentModal({ onClose, onSaved, prefill }: Props
     const fetchOptions = async () => {
       const [clientsRes, servicesRes, staffRes] = await Promise.all([
         supabase.from('clients').select('id, name').order('name'),
-        supabase.from('services').select('id, name, duration_mins').order('name'),
+        supabase.from('services').select('id, name, duration_mins, price').order('name'),
         supabase.from('staff').select('id, name').order('name'),
       ])
       if (clientsRes.data) setClients(clientsRes.data)
-      if (servicesRes.data) setServices(servicesRes.data)
+      if (servicesRes.data) setServices(servicesRes.data as Service[])
       if (staffRes.data) setStaffList(staffRes.data)
       setLoadingOptions(false)
     }
     fetchOptions()
   }, [])
 
+  const toggleService = (id: string) => {
+    setServiceError('')
+    setSelectedIds((prev) =>
+      prev.includes(id) ? prev.filter((s) => s !== id) : [...prev, id]
+    )
+  }
+
+  const selectedServices = services.filter((s) => selectedIds.includes(s.id))
+  const totalDuration = selectedServices.reduce((sum, s) => sum + (s.duration_mins ?? 0), 0)
+  const totalPrice = selectedServices.reduce((sum, s) => sum + (s.price ?? 0), 0)
+
   const onSubmit = async (values: FormValues) => {
+    if (selectedIds.length === 0) {
+      setServiceError('Please select at least one service')
+      return
+    }
     setSaveError('')
 
-    const service = services.find((s) => s.id === values.service_id)
-
     const startTime = new Date(`${values.date}T${values.time}`)
-    const durationMs = (service?.duration_mins ?? 60) * 60 * 1000
+    const durationMs = (totalDuration || 60) * 60 * 1000
     const endTime = new Date(startTime.getTime() + durationMs)
 
     const { error } = await supabase.from('appointments').insert({
       client_id: values.client_id,
-      service_id: values.service_id,
+      service_id: selectedIds[0],
+      service_ids: selectedIds,
       staff_id: values.staff_id,
       start_time: startTime.toISOString(),
       end_time: endTime.toISOString(),
+      price: totalPrice > 0 ? totalPrice : null,
       notes: values.notes || null,
       status: 'confirmed',
     })
@@ -113,10 +130,10 @@ export default function NewAppointmentModal({ onClose, onSaved, prefill }: Props
         {/* Header */}
         <div
           style={{ backgroundColor: '#1E3A5F' }}
-          className="flex items-center justify-between px-6 py-4 rounded-t-2xl"
+          className="flex items-center justify-between px-6 py-4 rounded-t-2xl sticky top-0 z-10"
         >
           <h2 className="text-white font-semibold text-base">New Appointment</h2>
-          <button onClick={onClose} className="text-blue-200 hover:text-white transition-colors">
+          <button onClick={onClose} className="text-blue-200 hover:text-white transition-colors p-1">
             <X size={20} />
           </button>
         </div>
@@ -143,20 +160,82 @@ export default function NewAppointmentModal({ onClose, onSaved, prefill }: Props
                 {errors.client_id && <p className={errorClass}>{errors.client_id.message}</p>}
               </div>
 
-              {/* Service */}
+              {/* Services — checkbox cards */}
               <div>
-                <label className={labelClass}>Service</label>
-                <select
-                  {...register('service_id', { required: 'Please select a service' })}
-                  className={inputClass}
-                  defaultValue=""
-                >
-                  <option value="" disabled>Select service</option>
-                  {services.map((s) => (
-                    <option key={s.id} value={s.id}>{s.name}</option>
-                  ))}
-                </select>
-                {errors.service_id && <p className={errorClass}>{errors.service_id.message}</p>}
+                <label className={labelClass}>Services</label>
+                <div className="space-y-2 mt-1">
+                  {services.map((s) => {
+                    const checked = selectedIds.includes(s.id)
+                    return (
+                      <label
+                        key={s.id}
+                        onClick={() => toggleService(s.id)}
+                        className={`flex items-start gap-3 p-3 rounded-xl border-2 cursor-pointer transition-all select-none ${
+                          checked
+                            ? 'border-[#2E86AB] bg-blue-50'
+                            : 'border-gray-200 bg-white hover:border-gray-300'
+                        }`}
+                      >
+                        {/* Checkbox */}
+                        <div
+                          className={`mt-0.5 w-5 h-5 rounded flex items-center justify-center shrink-0 border-2 transition-colors ${
+                            checked
+                              ? 'bg-[#2E86AB] border-[#2E86AB]'
+                              : 'border-gray-300 bg-white'
+                          }`}
+                        >
+                          {checked && (
+                            <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 12 12">
+                              <path d="M2 6l3 3 5-5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                            </svg>
+                          )}
+                        </div>
+
+                        {/* Info */}
+                        <div className="flex-1 min-w-0">
+                          <p className={`text-sm font-semibold leading-tight ${checked ? 'text-[#1E3A5F]' : 'text-gray-800'}`}>
+                            {s.name}
+                          </p>
+                          <div className="flex items-center gap-3 mt-1">
+                            {s.duration_mins != null && (
+                              <span className="flex items-center gap-1 text-xs text-gray-500">
+                                <Clock size={11} />
+                                {s.duration_mins} min
+                              </span>
+                            )}
+                            {s.price != null && (
+                              <span className={`flex items-center gap-1 text-xs font-semibold ${checked ? 'text-[#2E86AB]' : 'text-gray-600'}`}>
+                                <DollarSign size={11} />
+                                AED {s.price.toFixed(2)}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </label>
+                    )
+                  })}
+                </div>
+                {serviceError && <p className={errorClass}>{serviceError}</p>}
+
+                {/* Totals summary */}
+                {selectedIds.length > 0 && (
+                  <div
+                    className="mt-3 flex items-center justify-between px-4 py-2.5 rounded-xl text-sm font-semibold"
+                    style={{ backgroundColor: '#1E3A5F', color: 'white' }}
+                  >
+                    <span>{selectedIds.length} service{selectedIds.length > 1 ? 's' : ''} selected</span>
+                    <div className="flex items-center gap-4">
+                      <span className="flex items-center gap-1 opacity-80">
+                        <Clock size={13} />
+                        {totalDuration} min
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <DollarSign size={13} />
+                        AED {totalPrice.toFixed(2)}
+                      </span>
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Staff */}
@@ -176,7 +255,7 @@ export default function NewAppointmentModal({ onClose, onSaved, prefill }: Props
               </div>
 
               {/* Date & Time */}
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className={labelClass}>Date</label>
                   <input
@@ -219,7 +298,7 @@ export default function NewAppointmentModal({ onClose, onSaved, prefill }: Props
                 <button
                   type="button"
                   onClick={onClose}
-                  className="flex-1 border border-gray-300 text-gray-700 text-sm font-semibold py-2.5 rounded-lg hover:bg-gray-50 transition-colors"
+                  className="flex-1 border border-gray-300 text-gray-700 text-sm font-semibold py-3 rounded-lg hover:bg-gray-50 transition-colors min-h-[44px]"
                 >
                   Cancel
                 </button>
@@ -227,7 +306,7 @@ export default function NewAppointmentModal({ onClose, onSaved, prefill }: Props
                   type="submit"
                   disabled={isSubmitting}
                   style={{ backgroundColor: '#2E86AB' }}
-                  className="flex-1 text-white text-sm font-semibold py-2.5 rounded-lg hover:opacity-90 transition-opacity disabled:opacity-60 disabled:cursor-not-allowed"
+                  className="flex-1 text-white text-sm font-semibold py-3 rounded-lg hover:opacity-90 transition-opacity disabled:opacity-60 disabled:cursor-not-allowed min-h-[44px]"
                 >
                   {isSubmitting ? 'Saving...' : 'Save Appointment'}
                 </button>
