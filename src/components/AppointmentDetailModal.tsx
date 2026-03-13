@@ -252,13 +252,13 @@ export default function AppointmentDetailModal({ appt, onClose, onUpdated }: Pro
         {/* Backdrop */}
         <div className="absolute inset-0 bg-black/50" onClick={onClose} />
 
-        {/* Modal */}
-        <div className="relative bg-white rounded-2xl shadow-xl w-full max-w-md max-h-[90vh] overflow-y-auto">
+        {/* Modal — flex column so footer stays pinned */}
+        <div className="relative bg-white rounded-2xl shadow-xl w-full max-w-md max-h-[90vh] flex flex-col">
 
           {/* Header */}
           <div
             style={{ backgroundColor: '#1E3A5F' }}
-            className="flex items-center justify-between px-6 py-4 rounded-t-2xl sticky top-0"
+            className="flex items-center justify-between px-6 py-4 rounded-t-2xl shrink-0"
           >
             <h2 className="text-white font-semibold text-base">Appointment Detail</h2>
             <button onClick={onClose} className="text-blue-200 hover:text-white transition-colors">
@@ -266,7 +266,8 @@ export default function AppointmentDetailModal({ appt, onClose, onUpdated }: Pro
             </button>
           </div>
 
-          <div className="px-6 py-5 space-y-5">
+          {/* Scrollable body */}
+          <div className="flex-1 overflow-y-auto px-6 py-5 space-y-5 min-h-0">
 
             {/* Status badge */}
             <div className="flex justify-end">
@@ -380,7 +381,7 @@ export default function AppointmentDetailModal({ appt, onClose, onUpdated }: Pro
               </p>
             )}
 
-            {/* ── Status banners ── */}
+            {/* Status banners */}
             {appt.status === 'cancelled' && (
               <div className="flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-500 font-medium">
                 <X size={16} className="text-gray-400 shrink-0" />
@@ -394,81 +395,78 @@ export default function AppointmentDetailModal({ appt, onClose, onUpdated }: Pro
                 Job Completed by {appt.staff?.name ?? 'staff'}
               </div>
             )}
+          </div>
 
-            {/* ── Action buttons (confirmed only) ── */}
-            {appt.status === 'confirmed' && (
-              <>
-                {rescheduling ? (
+          {/* ── Fixed footer with action buttons ── */}
+          {appt.status === 'confirmed' && (
+            <div className="shrink-0 px-6 py-4 border-t border-gray-100 bg-white rounded-b-2xl">
+              {rescheduling ? (
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => setRescheduling(false)}
+                    disabled={busy}
+                    className="flex-1 border border-gray-300 text-gray-700 text-sm font-semibold py-3 rounded-xl hover:bg-gray-50 transition-colors disabled:opacity-50"
+                  >
+                    Discard
+                  </button>
+                  <button
+                    onClick={handleReschedule}
+                    disabled={busy || !rescheduleDate || !rescheduleTime}
+                    className="flex-1 text-white text-sm font-semibold py-3 rounded-xl hover:opacity-90 transition-opacity disabled:opacity-50"
+                    style={{ backgroundColor: '#2E86AB' }}
+                  >
+                    {busy ? 'Saving...' : 'Confirm Reschedule'}
+                  </button>
+                </div>
+              ) : confirmCancel ? (
+                <div className="space-y-2">
+                  <p className="text-sm text-gray-600 text-center font-medium">Cancel this appointment?</p>
                   <div className="flex gap-3">
                     <button
-                      onClick={() => setRescheduling(false)}
+                      onClick={() => setConfirmCancel(false)}
                       disabled={busy}
                       className="flex-1 border border-gray-300 text-gray-700 text-sm font-semibold py-3 rounded-xl hover:bg-gray-50 transition-colors disabled:opacity-50"
                     >
-                      Discard
+                      Keep It
                     </button>
                     <button
-                      onClick={handleReschedule}
-                      disabled={busy || !rescheduleDate || !rescheduleTime}
-                      className="flex-1 text-white text-sm font-semibold py-3 rounded-xl hover:opacity-90 transition-opacity disabled:opacity-50"
-                      style={{ backgroundColor: '#2E86AB' }}
+                      onClick={handleCancel}
+                      disabled={busy}
+                      className="flex-1 bg-red-500 hover:bg-red-600 text-white text-sm font-semibold py-3 rounded-xl transition-colors disabled:opacity-50"
                     >
-                      {busy ? 'Saving...' : 'Confirm Reschedule'}
+                      {busy ? 'Cancelling...' : 'Yes, Cancel'}
                     </button>
                   </div>
-                ) : confirmCancel ? (
-                  <div className="space-y-3">
-                    <p className="text-sm text-gray-600 text-center font-medium">
-                      Cancel this appointment?
-                    </p>
-                    <div className="flex gap-3">
-                      <button
-                        onClick={() => setConfirmCancel(false)}
-                        disabled={busy}
-                        className="flex-1 border border-gray-300 text-gray-700 text-sm font-semibold py-3 rounded-xl hover:bg-gray-50 transition-colors disabled:opacity-50"
-                      >
-                        Keep It
-                      </button>
-                      <button
-                        onClick={handleCancel}
-                        disabled={busy}
-                        className="flex-1 bg-red-500 hover:bg-red-600 text-white text-sm font-semibold py-3 rounded-xl transition-colors disabled:opacity-50"
-                      >
-                        {busy ? 'Cancelling...' : 'Yes, Cancel'}
-                      </button>
-                    </div>
-                  </div>
-                ) : (
-                  /* ── 3 main action buttons ── */
-                  <div className="flex gap-3">
-                    <button
-                      onClick={handleComplete}
-                      disabled={busy}
-                      className="flex-1 bg-green-500 hover:bg-green-600 active:bg-green-700 text-white text-sm font-bold py-3 rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      ✓ Complete
-                    </button>
-                    <button
-                      onClick={() => setRescheduling(true)}
-                      disabled={busy}
-                      className="flex-1 text-white text-sm font-bold py-3 rounded-xl hover:opacity-90 active:opacity-80 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
-                      style={{ backgroundColor: '#2E86AB' }}
-                    >
-                      📅 Reschedule
-                    </button>
-                    <button
-                      onClick={() => setConfirmCancel(true)}
-                      disabled={busy}
-                      className="flex-1 bg-red-500 hover:bg-red-600 active:bg-red-700 text-white text-sm font-bold py-3 rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      ✕ Cancel
-                    </button>
-                  </div>
-                )}
-              </>
-            )}
+                </div>
+              ) : (
+                <div className="flex gap-3">
+                  <button
+                    onClick={handleComplete}
+                    disabled={busy}
+                    className="flex-1 bg-green-500 hover:bg-green-600 text-white text-sm font-bold py-3 rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    ✓ Complete
+                  </button>
+                  <button
+                    onClick={() => setRescheduling(true)}
+                    disabled={busy}
+                    className="flex-1 text-white text-sm font-bold py-3 rounded-xl hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
+                    style={{ backgroundColor: '#2E86AB' }}
+                  >
+                    📅 Reschedule
+                  </button>
+                  <button
+                    onClick={() => setConfirmCancel(true)}
+                    disabled={busy}
+                    className="flex-1 bg-red-500 hover:bg-red-600 text-white text-sm font-bold py-3 rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    ✕ Cancel
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
 
-          </div>
         </div>
       </div>
 
