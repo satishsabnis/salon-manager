@@ -8,7 +8,7 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from 'recharts'
-import { CalendarDays, DollarSign, Users, Scissors } from 'lucide-react'
+import { CalendarDays, Users, Scissors } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 
 interface ServiceCount {
@@ -130,7 +130,7 @@ export default function Analytics() {
         <SummaryCard
           label="Total Revenue"
           value={`AED ${stats.totalRevenue.toFixed(2)}`}
-          icon={<DollarSign size={20} />}
+          icon={<span className="text-[11px] font-bold leading-none">AED</span>}
           accent="#2E86AB"
         />
         <SummaryCard

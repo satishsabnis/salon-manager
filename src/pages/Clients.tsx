@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
-import { Plus, Search, X, Mail, Phone, Scissors, DollarSign } from 'lucide-react'
+import { Plus, Search, X, Mail, Phone, Scissors } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 
 const SALON_ID = '11111111-1111-1111-1111-111111111111'
@@ -145,7 +145,7 @@ export default function Clients() {
                   <span>{client.visit_count ?? 0} visits</span>
                 </div>
                 <div className="flex items-center gap-1.5 text-gray-500">
-                  <DollarSign size={13} className="text-gray-400" />
+                  <span className="text-[10px] font-bold text-gray-400 leading-none">AED</span>
                   <span>AED {(client.total_spent ?? 0).toFixed(2)}</span>
                 </div>
               </div>

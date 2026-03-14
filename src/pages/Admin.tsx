@@ -384,7 +384,7 @@ function ServicesTab() {
                       <input value={ie.price} type="number" min="0" step="0.01"
                         onChange={e => setInlineEdit(p => ({ ...p, [s.id]: { ...p[s.id]!, price: e.target.value } }))}
                         style={{ width: 90, border: `1px solid ${BORDER}`, borderRadius: 6, padding: '4px 8px', fontSize: 13, outline: 'none' }} />
-                    ) : s.price != null ? `${s.price.toFixed(2)}` : '—'}
+                    ) : s.price != null ? `AED ${s.price.toFixed(2)}` : '—'}
                   </td>
                   <td style={td(i)}>
                     <button onClick={() => toggleActive(s)}
@@ -401,7 +401,7 @@ function ServicesTab() {
                         </>
                       ) : (
                         <>
-                          <button style={btnEdit} onClick={() => startInline(s)}>Edit $</button>
+                          <button style={btnEdit} onClick={() => startInline(s)}>Edit AED</button>
                           <button style={{ ...btnEdit, backgroundColor: '#7C3AED' }} onClick={() => openEdit(s)}>Edit</button>
                           <button style={btnDelete} onClick={() => del(s.id)}>Del</button>
                         </>

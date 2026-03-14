@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
-import { X, Clock, DollarSign } from 'lucide-react'
+import { X, Clock } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 
 interface Client {
@@ -204,8 +204,7 @@ export default function NewAppointmentModal({ onClose, onSaved, prefill }: Props
                               </span>
                             )}
                             {s.price != null && (
-                              <span className={`flex items-center gap-1 text-xs font-semibold ${checked ? 'text-[#2E86AB]' : 'text-gray-600'}`}>
-                                <DollarSign size={11} />
+                              <span className={`text-xs font-semibold ${checked ? 'text-[#2E86AB]' : 'text-gray-600'}`}>
                                 AED {s.price.toFixed(2)}
                               </span>
                             )}
@@ -229,8 +228,7 @@ export default function NewAppointmentModal({ onClose, onSaved, prefill }: Props
                         <Clock size={13} />
                         {totalDuration} min
                       </span>
-                      <span className="flex items-center gap-1">
-                        <DollarSign size={13} />
+                      <span>
                         AED {totalPrice.toFixed(2)}
                       </span>
                     </div>
