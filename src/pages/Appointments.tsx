@@ -26,6 +26,7 @@ export default function Appointments() {
       .from('appointments')
       .select(`
         id, client_id, service_id, staff_id, start_time, end_time, status, notes,
+        service_ids, service_staff, total_price,
         clients(id, name),
         services(name, duration_mins, price),
         staff(name)
