@@ -60,9 +60,10 @@ export default function Dashboard() {
       >
         <div
           style={{ backgroundColor: '#162d4a' }}
-          className="px-5 py-4 border-b border-white/10"
+          className="flex flex-col items-center border-b border-white/10 pt-3 pb-3"
         >
-          <span className="text-white font-bold text-sm leading-tight">
+          <img src="/logo.jpg" alt="New Look Beauty Salon" style={{ width: '160px', padding: '10px' }} />
+          <span className="text-white font-semibold text-xs leading-tight text-center px-3 pb-1 opacity-90">
             New Look Beauty Salon
           </span>
         </div>
@@ -80,8 +81,11 @@ export default function Dashboard() {
             style={{ backgroundColor: '#1E3A5F' }}
             className="relative z-50 w-64 flex flex-col"
           >
-            <div className="flex items-center justify-between px-5 py-4 border-b border-white/10">
-              <span className="text-white font-bold text-sm">New Look Beauty Salon</span>
+            <div className="flex items-center justify-between px-4 py-3 border-b border-white/10">
+              <div className="flex items-center gap-2">
+                <img src="/logo.jpg" alt="New Look Beauty Salon" style={{ width: '80px', padding: '4px' }} />
+                <span className="text-white font-semibold text-xs opacity-90">New Look Beauty Salon</span>
+              </div>
               <button onClick={() => setSidebarOpen(false)} className="text-white">
                 <X size={20} />
               </button>
