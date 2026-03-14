@@ -248,8 +248,8 @@ function StaffTab() {
 }
 
 // ── Services Tab ───────────────────────────────────────────────────────────
-interface ServiceForm { name: string; duration_mins: string; price: string; category: string }
-const emptySvc: ServiceForm = { name: '', duration_mins: '', price: '', category: '' }
+interface ServiceForm { name: string; duration_mins: string; category: string }
+const emptySvc: ServiceForm = { name: '', duration_mins: '', category: '' }
 
 function ServicesTab() {
   const [services, setServices] = useState<ServiceRow[]>([])
@@ -260,8 +260,8 @@ function ServicesTab() {
   const [form, setForm] = useState<ServiceForm>(emptySvc)
   const [saving, setSaving] = useState(false)
   const [formErr, setFormErr] = useState('')
-  // Inline edit state per row: maps service id → { price, duration }
-  const [inlineEdit, setInlineEdit] = useState<Record<string, { price: string; duration: string } | null>>({})
+  // Inline edit state per row: maps service id → { duration }
+  const [inlineEdit, setInlineEdit] = useState<Record<string, { duration: string } | null>>({})
 
   const load = async () => {
     setFetchErr('')
@@ -284,7 +284,7 @@ function ServicesTab() {
   const openAdd = () => { setEditing(null); setForm(emptySvc); setFormErr(''); setShowModal(true) }
   const openEdit = (s: ServiceRow) => {
     setEditing(s)
-    setForm({ name: s.name, duration_mins: s.duration_mins != null ? String(s.duration_mins) : '', price: s.price != null ? String(s.price) : '', category: s.category ?? '' })
+    setForm({ name: s.name, duration_mins: s.duration_mins != null ? String(s.duration_mins) : '', category: s.category ?? '' })
     setFormErr(''); setShowModal(true)
   }
   const closeModal = () => { setShowModal(false); setEditing(null) }
@@ -295,7 +295,6 @@ function ServicesTab() {
     const payload = {
       name: form.name.trim(),
       duration_mins: form.duration_mins ? parseInt(form.duration_mins, 10) : null,
-      price: form.price ? parseFloat(form.price) : null,
       category: form.category.trim() || null,
     }
     try {
@@ -318,14 +317,13 @@ function ServicesTab() {
   }
 
   const startInline = (s: ServiceRow) => {
-    setInlineEdit(p => ({ ...p, [s.id]: { price: s.price != null ? String(s.price) : '', duration: s.duration_mins != null ? String(s.duration_mins) : '' } }))
+    setInlineEdit(p => ({ ...p, [s.id]: { duration: s.duration_mins != null ? String(s.duration_mins) : '' } }))
   }
   const cancelInline = (id: string) => setInlineEdit(p => ({ ...p, [id]: null }))
   const saveInline = async (s: ServiceRow) => {
     const ie = inlineEdit[s.id]
     if (!ie) return
     await supabase.from('services').update({
-      price: ie.price ? parseFloat(ie.price) : null,
       duration_mins: ie.duration ? parseInt(ie.duration, 10) : null,
     }).eq('id', s.id)
     cancelInline(s.id)
@@ -356,14 +354,13 @@ function ServicesTab() {
               <th style={th}>Name</th>
               <th style={th}>Category</th>
               <th style={th}>Duration (mins)</th>
-              <th style={th}>Price (AED)</th>
               <th style={th}>Active</th>
-              <th style={{ ...th, width: 160 }}>Actions</th>
+              <th style={{ ...th, width: 140 }}>Actions</th>
             </tr>
           </thead>
           <tbody>
             {services.length === 0 ? (
-              <tr><td colSpan={6} style={{ padding: '40px', textAlign: 'center', color: MUTED, fontSize: 14 }}>No services added yet.</td></tr>
+              <tr><td colSpan={5} style={{ padding: '40px', textAlign: 'center', color: MUTED, fontSize: 14 }}>No services added yet.</td></tr>
             ) : services.map((s, i) => {
               const ie = inlineEdit[s.id]
               return (
@@ -374,17 +371,9 @@ function ServicesTab() {
                   <td style={td(i)}>
                     {ie ? (
                       <input value={ie.duration} type="number" min="0"
-                        onChange={e => setInlineEdit(p => ({ ...p, [s.id]: { ...p[s.id]!, duration: e.target.value } }))}
+                        onChange={e => setInlineEdit(p => ({ ...p, [s.id]: { duration: e.target.value } }))}
                         style={{ width: 80, border: `1px solid ${BORDER}`, borderRadius: 6, padding: '4px 8px', fontSize: 13, outline: 'none' }} />
                     ) : s.duration_mins != null ? `${s.duration_mins} min` : '—'}
-                  </td>
-                  {/* Inline-editable Price */}
-                  <td style={td(i)}>
-                    {ie ? (
-                      <input value={ie.price} type="number" min="0" step="0.01"
-                        onChange={e => setInlineEdit(p => ({ ...p, [s.id]: { ...p[s.id]!, price: e.target.value } }))}
-                        style={{ width: 90, border: `1px solid ${BORDER}`, borderRadius: 6, padding: '4px 8px', fontSize: 13, outline: 'none' }} />
-                    ) : s.price != null ? `AED ${s.price.toFixed(2)}` : '—'}
                   </td>
                   <td style={td(i)}>
                     <button onClick={() => toggleActive(s)}
@@ -401,8 +390,8 @@ function ServicesTab() {
                         </>
                       ) : (
                         <>
-                          <button style={btnEdit} onClick={() => startInline(s)}>Edit AED</button>
-                          <button style={{ ...btnEdit, backgroundColor: '#7C3AED' }} onClick={() => openEdit(s)}>Edit</button>
+                          <button style={btnEdit} onClick={() => startInline(s)}>Edit</button>
+                          <button style={{ ...btnEdit, backgroundColor: '#7C3AED' }} onClick={() => openEdit(s)}>Details</button>
                           <button style={btnDelete} onClick={() => del(s.id)}>Del</button>
                         </>
                       )}
@@ -424,10 +413,7 @@ function ServicesTab() {
             </div>
             <div style={modalBody}>
               <div style={fg}><label style={lbl}>Service Name *</label><input style={inp} value={form.name} onChange={e => f('name', e.target.value)} placeholder="e.g. Haircut & Style" /></div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 16 }}>
-                <div><label style={lbl}>Duration (mins)</label><input style={inp} type="number" min="0" value={form.duration_mins} onChange={e => f('duration_mins', e.target.value)} placeholder="60" /></div>
-                <div><label style={lbl}>Price (AED)</label><input style={inp} type="number" min="0" step="0.01" value={form.price} onChange={e => f('price', e.target.value)} placeholder="0.00" /></div>
-              </div>
+              <div style={fg}><label style={lbl}>Duration (mins)</label><input style={inp} type="number" min="0" value={form.duration_mins} onChange={e => f('duration_mins', e.target.value)} placeholder="60" /></div>
               <div style={fg}><label style={lbl}>Category</label><input style={inp} value={form.category} onChange={e => f('category', e.target.value)} placeholder="e.g. Hair, Nails, Skin" /></div>
               {formErr && <div style={{ color: '#DC2626', fontSize: 13, background: '#FEF2F2', border: '1px solid #FECACA', borderRadius: 8, padding: '8px 12px' }}>{formErr}</div>}
             </div>

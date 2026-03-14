@@ -252,7 +252,7 @@ export default function AppointmentDetailModal({ appt, onClose, onUpdated }: Pro
     setAddingService(true)
     const newServiceIds = [...(appt.service_ids ?? []), svc.id]
     const newEndTime = new Date(new Date(appt.end_time).getTime() + svc.duration_mins * 60 * 1000)
-    const newPrices = { ...servicePrices, [svc.id]: svc.price }
+    const newPrices = { ...servicePrices, [svc.id]: 0 }
     const newTotal = primaryPrice + Object.values(newPrices).reduce((s, p) => s + p, 0)
 
     const { error: err } = await supabase.from('appointments').update({
