@@ -24,7 +24,8 @@ export default function Dashboard() {
 
   const SidebarContent = () => (
     <nav className="flex flex-col h-full py-6 px-4 space-y-1">
-      <p className="text-xs uppercase tracking-widest text-blue-300 font-semibold mb-4 px-2">
+      <p className="text-xs uppercase tracking-widest font-semibold mb-4 px-2"
+        style={{ color: 'rgba(212,168,71,0.6)' }}>
         Menu
       </p>
       {navItems.map(({ label, to, icon: Icon }) => (
@@ -33,16 +34,24 @@ export default function Dashboard() {
           to={to}
           end={to === '/dashboard'}
           onClick={() => setSidebarOpen(false)}
-          className={({ isActive }) =>
-            `flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
-              isActive
-                ? 'text-white'
-                : 'text-blue-100 hover:bg-white/10'
-            }`
-          }
+          className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all"
           style={({ isActive }) =>
-            isActive ? { backgroundColor: '#2E86AB' } : {}
+            isActive
+              ? { backgroundColor: '#D4A847', color: '#1A0505', borderRadius: '8px' }
+              : { color: '#D4A847', backgroundColor: 'transparent' }
           }
+          onMouseEnter={(e) => {
+            const el = e.currentTarget
+            if (!el.getAttribute('aria-current')) {
+              el.style.backgroundColor = 'rgba(212,168,71,0.15)'
+            }
+          }}
+          onMouseLeave={(e) => {
+            const el = e.currentTarget
+            if (!el.getAttribute('aria-current')) {
+              el.style.backgroundColor = 'transparent'
+            }
+          }}
         >
           <Icon size={18} />
           {label}
@@ -55,17 +64,26 @@ export default function Dashboard() {
     <div className="flex h-screen overflow-hidden bg-gray-100">
       {/* Sidebar — desktop */}
       <aside
-        style={{ backgroundColor: '#1E3A5F' }}
+        style={{ backgroundColor: '#1A0505' }}
         className="hidden md:flex flex-col w-60 shrink-0"
       >
         <div
-          style={{ backgroundColor: '#162d4a' }}
-          className="flex flex-col items-center border-b border-white/10 pt-3 pb-3"
+          style={{ backgroundColor: '#2C0A0A' }}
+          className="flex flex-col items-center border-b border-white/10"
         >
-          <img src="/logo.jpg" alt="New Look Beauty Salon" style={{ width: '160px', padding: '10px' }} />
-          <span className="text-white font-semibold text-xs leading-tight text-center px-3 pb-1 opacity-90">
-            New Look Beauty Salon
-          </span>
+          <img
+            src="/logo.jpg"
+            alt="New Look Beauty Salon"
+            style={{ width: '140px', display: 'block', margin: '0 auto', padding: '12px 8px' }}
+            onError={(e) => {
+              const parent = (e.currentTarget as HTMLImageElement).parentElement!
+              e.currentTarget.style.display = 'none'
+              const fallback = document.createElement('span')
+              fallback.textContent = 'NEW LOOK'
+              fallback.style.cssText = 'color:#D4A847;font-size:20px;font-weight:900;letter-spacing:0.12em;padding:16px 8px;display:block;text-align:center'
+              parent.appendChild(fallback)
+            }}
+          />
         </div>
         <SidebarContent />
       </aside>
@@ -78,15 +96,27 @@ export default function Dashboard() {
             onClick={() => setSidebarOpen(false)}
           />
           <aside
-            style={{ backgroundColor: '#1E3A5F' }}
+            style={{ backgroundColor: '#1A0505' }}
             className="relative z-50 w-64 flex flex-col"
           >
-            <div className="flex items-center justify-between px-4 py-3 border-b border-white/10">
-              <div className="flex items-center gap-2">
-                <img src="/logo.jpg" alt="New Look Beauty Salon" style={{ width: '80px', padding: '4px' }} />
-                <span className="text-white font-semibold text-xs opacity-90">New Look Beauty Salon</span>
-              </div>
-              <button onClick={() => setSidebarOpen(false)} className="text-white">
+            <div
+              className="flex items-center justify-between px-4 py-3 border-b border-white/10"
+              style={{ backgroundColor: '#2C0A0A' }}
+            >
+              <img
+                src="/logo.jpg"
+                alt="New Look Beauty Salon"
+                style={{ width: '90px', display: 'block', padding: '4px 0' }}
+                onError={(e) => {
+                  const parent = (e.currentTarget as HTMLImageElement).parentElement!
+                  e.currentTarget.style.display = 'none'
+                  const fallback = document.createElement('span')
+                  fallback.textContent = 'NEW LOOK'
+                  fallback.style.cssText = 'color:#D4A847;font-size:15px;font-weight:900;letter-spacing:0.1em'
+                  parent.appendChild(fallback)
+                }}
+              />
+              <button onClick={() => setSidebarOpen(false)} style={{ color: '#D4A847' }}>
                 <X size={20} />
               </button>
             </div>
@@ -99,23 +129,24 @@ export default function Dashboard() {
       <div className="flex flex-col flex-1 overflow-hidden">
         {/* Top bar */}
         <header
-          style={{ backgroundColor: '#1E3A5F' }}
+          style={{ backgroundColor: '#1A0505' }}
           className="flex items-center justify-between px-4 md:px-6 py-3 shadow-md shrink-0"
         >
           <div className="flex items-center gap-3">
             <button
-              className="md:hidden text-white p-2 -ml-2 rounded-lg min-h-[44px] min-w-[44px] flex items-center justify-center"
+              style={{ color: '#D4A847' }}
+              className="md:hidden p-2 -ml-2 rounded-lg min-h-[44px] min-w-[44px] flex items-center justify-center"
               onClick={() => setSidebarOpen(true)}
             >
               <Menu size={22} />
             </button>
-            <span className="text-white font-semibold text-sm md:text-base">
+            <span style={{ color: '#D4A847', fontWeight: 'bold' }} className="text-sm md:text-base">
               New Look Beauty Salon
             </span>
           </div>
           <button
             onClick={handleLogout}
-            style={{ backgroundColor: '#dc2626', color: 'white', padding: '8px 16px', borderRadius: '8px', fontWeight: 'bold', border: 'none', cursor: 'pointer' }}
+            style={{ backgroundColor: '#D4A847', color: '#1A0505', padding: '8px 16px', borderRadius: '8px', fontWeight: 'bold', border: 'none', cursor: 'pointer' }}
             className="flex items-center gap-2 text-sm"
           >
             <LogOut size={16} />

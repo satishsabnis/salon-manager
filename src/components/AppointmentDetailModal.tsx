@@ -524,54 +524,56 @@ export default function AppointmentDetailModal({ appt, onClose, onUpdated }: Pro
           </div>
 
           {/* Footer */}
-          <div className="p-4 grid grid-cols-2 gap-3 border-t border-gray-200" style={{ flexShrink: 0 }}>
-            {rescheduling ? (
-              <>
-                <button onClick={() => setRescheduling(false)} disabled={busy}
-                  style={{ backgroundColor: '#6B7280', color: 'white', padding: '12px', borderRadius: '8px',
-                    fontWeight: 'bold', border: 'none', cursor: 'pointer', opacity: busy ? 0.6 : 1 }}>
-                  Discard
-                </button>
-                <button onClick={saveReschedule} disabled={busy || !rescheduleDate || !rescheduleTime}
-                  style={{ backgroundColor: '#2563eb', color: 'white', padding: '12px', borderRadius: '8px',
-                    fontWeight: 'bold', border: 'none', cursor: 'pointer', opacity: busy ? 0.6 : 1 }}>
-                  {busy ? 'Saving...' : 'Confirm'}
-                </button>
-              </>
-            ) : confirmCancel ? (
-              <>
-                <button onClick={() => setConfirmCancel(false)} disabled={busy}
-                  style={{ backgroundColor: '#6B7280', color: 'white', padding: '12px', borderRadius: '8px',
-                    fontWeight: 'bold', border: 'none', cursor: 'pointer', opacity: busy ? 0.6 : 1 }}>
-                  Keep It
-                </button>
-                <button onClick={doCancel} disabled={busy}
-                  style={{ backgroundColor: '#dc2626', color: 'white', padding: '12px', borderRadius: '8px',
-                    fontWeight: 'bold', border: 'none', cursor: 'pointer', opacity: busy ? 0.6 : 1 }}>
-                  {busy ? 'Cancelling...' : 'Yes, Cancel'}
-                </button>
-              </>
-            ) : (
-              <>
-                <button onClick={handleComplete}
-                  style={{ backgroundColor: '#16a34a', color: 'white', padding: '12px', borderRadius: '8px', fontWeight: 'bold', border: 'none', cursor: 'pointer' }}>
-                  Complete
-                </button>
-                <button onClick={handleReschedule}
-                  style={{ backgroundColor: '#2563eb', color: 'white', padding: '12px', borderRadius: '8px', fontWeight: 'bold', border: 'none', cursor: 'pointer' }}>
-                  Reschedule
-                </button>
-                <button onClick={handlePayment}
-                  style={{ backgroundColor: '#ca8a04', color: 'white', padding: '12px', borderRadius: '8px', fontWeight: 'bold', border: 'none', cursor: 'pointer' }}>
-                  Payment
-                </button>
-                <button onClick={handleCancel}
-                  style={{ backgroundColor: '#dc2626', color: 'white', padding: '12px', borderRadius: '8px', fontWeight: 'bold', border: 'none', cursor: 'pointer' }}>
-                  Cancel
-                </button>
-              </>
-            )}
-          </div>
+          {appt.status !== 'completed' && appt.status !== 'cancelled' && (
+            <div className="p-4 grid grid-cols-2 gap-3 border-t border-gray-200" style={{ flexShrink: 0 }}>
+              {rescheduling ? (
+                <>
+                  <button onClick={() => setRescheduling(false)} disabled={busy}
+                    style={{ backgroundColor: '#6B7280', color: 'white', padding: '12px', borderRadius: '8px',
+                      fontWeight: 'bold', border: 'none', cursor: 'pointer', opacity: busy ? 0.6 : 1 }}>
+                    Discard
+                  </button>
+                  <button onClick={saveReschedule} disabled={busy || !rescheduleDate || !rescheduleTime}
+                    style={{ backgroundColor: '#2563eb', color: 'white', padding: '12px', borderRadius: '8px',
+                      fontWeight: 'bold', border: 'none', cursor: 'pointer', opacity: busy ? 0.6 : 1 }}>
+                    {busy ? 'Saving...' : 'Confirm'}
+                  </button>
+                </>
+              ) : confirmCancel ? (
+                <>
+                  <button onClick={() => setConfirmCancel(false)} disabled={busy}
+                    style={{ backgroundColor: '#6B7280', color: 'white', padding: '12px', borderRadius: '8px',
+                      fontWeight: 'bold', border: 'none', cursor: 'pointer', opacity: busy ? 0.6 : 1 }}>
+                    Keep It
+                  </button>
+                  <button onClick={doCancel} disabled={busy}
+                    style={{ backgroundColor: '#dc2626', color: 'white', padding: '12px', borderRadius: '8px',
+                      fontWeight: 'bold', border: 'none', cursor: 'pointer', opacity: busy ? 0.6 : 1 }}>
+                    {busy ? 'Cancelling...' : 'Yes, Cancel'}
+                  </button>
+                </>
+              ) : (
+                <>
+                  <button onClick={handleComplete}
+                    style={{ backgroundColor: '#16a34a', color: 'white', padding: '12px', borderRadius: '8px', fontWeight: 'bold', border: 'none', cursor: 'pointer' }}>
+                    Complete
+                  </button>
+                  <button onClick={handleReschedule}
+                    style={{ backgroundColor: '#2563eb', color: 'white', padding: '12px', borderRadius: '8px', fontWeight: 'bold', border: 'none', cursor: 'pointer' }}>
+                    Reschedule
+                  </button>
+                  <button onClick={handlePayment}
+                    style={{ backgroundColor: '#ca8a04', color: 'white', padding: '12px', borderRadius: '8px', fontWeight: 'bold', border: 'none', cursor: 'pointer' }}>
+                    Payment
+                  </button>
+                  <button onClick={handleCancel}
+                    style={{ backgroundColor: '#dc2626', color: 'white', padding: '12px', borderRadius: '8px', fontWeight: 'bold', border: 'none', cursor: 'pointer' }}>
+                    Cancel
+                  </button>
+                </>
+              )}
+            </div>
+          )}
 
         </div>
       </div>
