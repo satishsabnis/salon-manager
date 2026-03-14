@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { CalendarDays, Users, ChevronRight } from 'lucide-react'
+import { CalendarDays, Users, ChevronRight, CheckCircle, TrendingUp } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import AppointmentDetailModal, { type AppointmentDetail } from '../components/AppointmentDetailModal'
 
@@ -18,64 +18,93 @@ interface BirthdayClient {
   loyalty_points: number | null
 }
 
+interface TopStaff {
+  name: string
+  revenue: number
+  appointments: number
+}
+
+interface RevenueSummary {
+  today: number
+  week: number
+  month: number
+  year: number
+}
+
 const statusStyle: Record<string, string> = {
-  confirmed:  'bg-green-100 text-green-700',
-  completed:  'bg-blue-100 text-blue-700',
-  cancelled:  'bg-red-100 text-red-600',
+  confirmed: 'bg-green-100 text-green-700',
+  completed: 'bg-blue-100 text-blue-700',
+  cancelled: 'bg-red-100 text-red-600',
+}
+
+function getWeekStart(now: Date): Date {
+  const day = now.getDay()
+  const diff = day === 0 ? 6 : day - 1
+  return new Date(now.getFullYear(), now.getMonth(), now.getDate() - diff)
 }
 
 export default function DashboardHome() {
   const navigate = useNavigate()
 
-  const [todayCount, setTodayCount] = useState(0)
-  const [clientCount, setClientCount] = useState(0)
-  const [monthRevenue, setMonthRevenue] = useState(0)
   const [todayAppointments, setTodayAppointments] = useState<TodayAppointment[]>([])
   const [staffList, setStaffList] = useState<StaffMember[]>([])
   const [birthdayClients, setBirthdayClients] = useState<BirthdayClient[]>([])
   const [loading, setLoading] = useState(true)
   const [selectedAppt, setSelectedAppt] = useState<TodayAppointment | null>(null)
 
+  // New card state
+  const [servicesCompletedToday, setServicesCompletedToday] = useState(0)
+  const [clientsSeenToday, setClientsSeenToday] = useState(0)
+  const [topStaff, setTopStaff] = useState<TopStaff | null>(null)
+  const [revenue, setRevenue] = useState<RevenueSummary>({ today: 0, week: 0, month: 0, year: 0 })
+
   useEffect(() => {
     const fetchAll = async () => {
       const now = new Date()
       const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString()
       const todayEnd   = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1).toISOString()
+      const weekStart  = getWeekStart(now).toISOString()
       const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString()
-      const monthEnd   = new Date(now.getFullYear(), now.getMonth() + 1, 1).toISOString()
+      const yearStart  = new Date(now.getFullYear(), 0, 1).toISOString()
+      const nowIso     = now.toISOString()
 
-      const [apptRes, clientCountRes, monthApptRes, staffRes, birthdayRes] = await Promise.all([
+      const [apptRes, staffRes, birthdayRes, yearlyRes] = await Promise.all([
+        // Today's full appointments (for staff cards + today stats)
         supabase
           .from('appointments')
           .select('id, start_time, end_time, status, client_id, service_id, staff_id, notes, clients(id, name), services(name, duration_mins, price), staff(id, name)')
           .gte('start_time', todayStart)
           .lt('start_time', todayEnd)
           .order('start_time', { ascending: true }),
-        supabase.from('clients').select('id', { count: 'exact', head: true }),
-        supabase
-          .from('appointments')
-          .select('services(price)')
-          .gte('start_time', monthStart)
-          .lt('start_time', monthEnd)
-          .neq('status', 'cancelled'),
+
+        // Staff list
         supabase.from('staff').select('id, name').order('name'),
+
+        // Birthdays
         supabase
           .from('clients')
           .select('id, name, birth_date, loyalty_points')
           .not('birth_date', 'is', null),
+
+        // Year-to-date non-cancelled (for all revenue + top staff)
+        supabase
+          .from('appointments')
+          .select('staff_id, staff(name), services(price), status, start_time, client_id')
+          .gte('start_time', yearStart)
+          .lte('start_time', nowIso)
+          .neq('status', 'cancelled'),
       ])
 
+      // ── Today's appointments ─────────────────────────────────────────────
       const appts = (apptRes.data as unknown as TodayAppointment[]) ?? []
-      setTodayCount(appts.length)
       setTodayAppointments(appts)
-      setClientCount(clientCountRes.count ?? 0)
+      setServicesCompletedToday(appts.filter(a => a.status === 'completed').length)
+      setClientsSeenToday(new Set(appts.filter(a => a.status !== 'cancelled').map(a => a.client_id)).size)
 
-      const revenue = (monthApptRes.data ?? []).reduce((sum: number, row: any) =>
-        sum + (row.services?.price ?? 0), 0)
-      setMonthRevenue(revenue)
-
+      // ── Staff list ───────────────────────────────────────────────────────
       setStaffList((staffRes.data as StaffMember[]) ?? [])
 
+      // ── Birthdays ────────────────────────────────────────────────────────
       const today = new Date()
       today.setHours(0, 0, 0, 0)
       const in30 = new Date(today)
@@ -91,8 +120,37 @@ export default function DashboardHome() {
         .filter(({ next }) => next >= today && next <= in30)
         .sort((a, b) => a.next.getTime() - b.next.getTime())
         .map(({ client }) => client)
-
       setBirthdayClients(upcoming)
+
+      // ── Revenue + top staff from yearly dataset ──────────────────────────
+      const yearly = (yearlyRes.data ?? []) as any[]
+
+      const sumRevenue = (rows: any[]) =>
+        rows.reduce((s: number, r: any) => s + (r.services?.price ?? 0), 0)
+
+      const todayRows  = yearly.filter(r => r.start_time >= todayStart && r.start_time < todayEnd)
+      const weekRows   = yearly.filter(r => r.start_time >= weekStart)
+      const monthRows  = yearly.filter(r => r.start_time >= monthStart)
+
+      setRevenue({
+        today: sumRevenue(todayRows),
+        week:  sumRevenue(weekRows),
+        month: sumRevenue(monthRows),
+        year:  sumRevenue(yearly),
+      })
+
+      // Top revenue staff this week
+      const staffMap: Record<string, { name: string; revenue: number; appointments: number }> = {}
+      for (const r of weekRows) {
+        const sid = r.staff_id ?? 'unknown'
+        const sname = (r.staff as any)?.name ?? 'Unknown'
+        if (!staffMap[sid]) staffMap[sid] = { name: sname, revenue: 0, appointments: 0 }
+        staffMap[sid].revenue += r.services?.price ?? 0
+        staffMap[sid].appointments++
+      }
+      const top = Object.values(staffMap).sort((a, b) => b.revenue - a.revenue)[0] ?? null
+      setTopStaff(top)
+
       setLoading(false)
     }
 
@@ -110,29 +168,102 @@ export default function DashboardHome() {
     return <div className="flex justify-center py-20 text-gray-400 text-sm">Loading...</div>
   }
 
+  const todayCount = todayAppointments.length
+
   return (
     <div className="space-y-8">
 
-      {/* ── Summary cards ── */}
+      {/* ── Three summary cards ── */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <SummaryCard
-          icon={<CalendarDays size={20} />}
-          label="Today's Appointments"
-          value={String(todayCount)}
-          color="#2E86AB"
-        />
-        <SummaryCard
-          icon={<Users size={20} />}
-          label="Total Clients"
-          value={String(clientCount)}
-          color="#1E3A5F"
-        />
-        <SummaryCard
-          icon={<span className="text-[10px] font-bold text-white leading-none">AED</span>}
-          label="This Month's Revenue"
-          value={`AED ${monthRevenue.toFixed(2)}`}
-          color="#2a9d5c"
-        />
+
+        {/* Card 1 — Today's Summary */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
+          <div className="flex items-center gap-2 mb-4">
+            <div className="w-8 h-8 rounded-lg flex items-center justify-center text-white"
+              style={{ backgroundColor: '#2E86AB' }}>
+              <CalendarDays size={16} />
+            </div>
+            <p className="text-sm font-bold text-gray-700">Today's Summary</p>
+          </div>
+          <div className="space-y-3">
+            <MetricRow
+              icon={<CalendarDays size={14} className="text-blue-400" />}
+              label="Appointments"
+              value={String(todayCount)}
+            />
+            <MetricRow
+              icon={<CheckCircle size={14} className="text-green-500" />}
+              label="Services Completed"
+              value={String(servicesCompletedToday)}
+            />
+            <MetricRow
+              icon={<Users size={14} className="text-purple-400" />}
+              label="Clients Seen"
+              value={String(clientsSeenToday)}
+            />
+          </div>
+        </div>
+
+        {/* Card 2 — Top Revenue Generator This Week */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
+          <div className="flex items-center gap-2 mb-4">
+            <div className="w-8 h-8 rounded-lg flex items-center justify-center text-white"
+              style={{ backgroundColor: '#1E3A5F' }}>
+              <TrendingUp size={16} />
+            </div>
+            <p className="text-sm font-bold text-gray-700">Top This Week</p>
+          </div>
+          {topStaff ? (
+            <div>
+              <div className="flex items-center gap-2 mb-3">
+                <span className="text-2xl leading-none">🏆</span>
+                <p className="text-base font-bold" style={{ color: '#1E3A5F' }}>{topStaff.name}</p>
+              </div>
+              <div className="space-y-2">
+                <div className="flex justify-between items-center">
+                  <span className="text-xs text-gray-500">Revenue</span>
+                  <span className="text-sm font-bold" style={{ color: '#2a9d5c' }}>
+                    AED {topStaff.revenue.toFixed(2)}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-xs text-gray-500">Appointments</span>
+                  <span className="text-sm font-semibold text-gray-700">{topStaff.appointments}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-xs text-gray-500">Avg / Appt</span>
+                  <span className="text-sm font-semibold text-gray-700">
+                    AED {(topStaff.appointments > 0 ? topStaff.revenue / topStaff.appointments : 0).toFixed(2)}
+                  </span>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="flex flex-col items-center justify-center h-24 text-gray-400">
+              <span className="text-2xl mb-1">🏆</span>
+              <p className="text-xs">No data yet this week</p>
+            </div>
+          )}
+        </div>
+
+        {/* Card 3 — Revenue Summary */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
+          <div className="flex items-center gap-2 mb-4">
+            <div className="w-8 h-8 rounded-lg flex items-center justify-center text-white"
+              style={{ backgroundColor: '#2a9d5c' }}>
+              <span className="text-[10px] font-bold leading-none">AED</span>
+            </div>
+            <p className="text-sm font-bold text-gray-700">Revenue Summary</p>
+          </div>
+          <div className="space-y-2.5">
+            <RevenueRow label="Today"      amount={revenue.today} />
+            <RevenueRow label="This Week"  amount={revenue.week} />
+            <RevenueRow label="This Month" amount={revenue.month} highlight />
+            <div className="border-t border-gray-100 pt-2.5">
+              <RevenueRow label="This Year"  amount={revenue.year} />
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* ── Today's Appointments by Staff ── */}
@@ -143,7 +274,7 @@ export default function DashboardHome() {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
           {staffList.map((staff) => {
             const appts = todayAppointments.filter((a) => a.staff_id === staff.id)
-            const todayRevenue = appts
+            const staffRevenue = appts
               .filter(a => a.status !== 'cancelled')
               .reduce((s, a) => s + (a.services?.price ?? 0), 0)
 
@@ -153,7 +284,6 @@ export default function DashboardHome() {
                 onClick={() => navigate(`/dashboard/staff/${staff.id}`)}
                 className="bg-white rounded-xl shadow-sm border border-gray-100 p-5 cursor-pointer hover:shadow-md hover:border-blue-200 transition-all group"
               >
-                {/* Card header */}
                 <div className="flex items-center justify-between mb-3 pb-3 border-b border-gray-100">
                   <h3 className="font-bold text-gray-800 group-hover:text-[#1E3A5F] transition-colors">
                     {staff.name}
@@ -161,7 +291,6 @@ export default function DashboardHome() {
                   <ChevronRight size={16} className="text-gray-400 group-hover:text-[#2E86AB] transition-colors" />
                 </div>
 
-                {/* Stats row */}
                 <div className="flex items-center gap-3 mb-4">
                   <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold"
                     style={{ backgroundColor: '#EFF6FF', color: '#1D4ED8' }}>
@@ -171,11 +300,10 @@ export default function DashboardHome() {
                   <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold"
                     style={{ backgroundColor: '#F0FDF4', color: '#15803D' }}>
                     <span className="text-[9px] font-bold leading-none">AED</span>
-                    {todayRevenue.toFixed(2)}
+                    {staffRevenue.toFixed(2)}
                   </div>
                 </div>
 
-                {/* Appointment list */}
                 {appts.length === 0 ? (
                   <p className="text-sm text-gray-400">No appointments today</p>
                 ) : (
@@ -192,10 +320,7 @@ export default function DashboardHome() {
                         >
                           <div className="flex-1 min-w-0">
                             <button
-                              onClick={(e) => {
-                                e.stopPropagation()
-                                navigate(`/dashboard/clients/${appt.client_id}`)
-                              }}
+                              onClick={(e) => { e.stopPropagation(); navigate(`/dashboard/clients/${appt.client_id}`) }}
                               className="text-sm font-semibold hover:underline truncate block text-left"
                               style={{ color: '#2E86AB' }}
                             >
@@ -258,7 +383,6 @@ export default function DashboardHome() {
         )}
       </div>
 
-      {/* Appointment detail modal */}
       {selectedAppt && (
         <AppointmentDetailModal
           appt={selectedAppt}
@@ -270,19 +394,29 @@ export default function DashboardHome() {
   )
 }
 
-function SummaryCard({ icon, label, value, color }: {
-  icon: React.ReactNode; label: string; value: string; color: string
+function MetricRow({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
+  return (
+    <div className="flex items-center justify-between">
+      <div className="flex items-center gap-2 text-xs text-gray-500">
+        {icon}
+        {label}
+      </div>
+      <span className="text-sm font-bold text-gray-800">{value}</span>
+    </div>
+  )
+}
+
+function RevenueRow({ label, amount, highlight = false }: {
+  label: string; amount: number; highlight?: boolean
 }) {
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5 flex items-center gap-4">
-      <div className="w-11 h-11 rounded-full flex items-center justify-center text-white shrink-0"
-        style={{ backgroundColor: color }}>
-        {icon}
-      </div>
-      <div>
-        <p className="text-xs text-gray-500 mb-0.5">{label}</p>
-        <p className="text-2xl font-bold text-gray-800">{value}</p>
-      </div>
+    <div className={`flex items-center justify-between ${highlight ? 'py-1.5 px-2.5 rounded-lg' : ''}`}
+      style={highlight ? { backgroundColor: '#F0F7FF' } : {}}>
+      <span className={`text-xs ${highlight ? 'font-bold text-gray-700' : 'text-gray-500'}`}>{label}</span>
+      <span className={`${highlight ? 'text-base font-bold' : 'text-sm font-semibold text-gray-700'}`}
+        style={highlight ? { color: '#1E3A5F' } : {}}>
+        AED {amount.toFixed(2)}
+      </span>
     </div>
   )
 }
