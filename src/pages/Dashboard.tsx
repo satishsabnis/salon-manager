@@ -64,6 +64,7 @@ export default function Dashboard() {
     <div className="flex h-screen overflow-hidden bg-gray-100">
       {/* Sidebar — desktop */}
       <aside
+        data-version="2"
         style={{ backgroundColor: '#1A0505' }}
         className="hidden md:flex flex-col w-60 shrink-0"
       >

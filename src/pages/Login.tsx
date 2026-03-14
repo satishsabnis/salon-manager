@@ -28,7 +28,7 @@ export default function Login() {
   return (
     <div className="min-h-screen flex flex-col bg-gray-100">
       {/* Header */}
-      <header style={{ backgroundColor: '#1E3A5F' }} className="py-6 px-8 shadow-md">
+      <header style={{ backgroundColor: '#1A0505' }} className="py-6 px-8 shadow-md">
         <h1 className="text-white text-2xl font-bold tracking-wide text-center">
           New Look Beauty Salon
         </h1>
@@ -53,7 +53,7 @@ export default function Login() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="you@example.com"
-                className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#2E86AB] focus:border-transparent"
+                className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#D4A847] focus:border-transparent"
               />
             </div>
 
@@ -68,7 +68,7 @@ export default function Login() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
-                className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#2E86AB] focus:border-transparent"
+                className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#D4A847] focus:border-transparent"
               />
             </div>
 
@@ -81,7 +81,7 @@ export default function Login() {
             <button
               type="submit"
               disabled={loading}
-              style={{ backgroundColor: '#2E86AB' }}
+              style={{ backgroundColor: '#D4A847' }}
               className="w-full text-white font-semibold py-2.5 rounded-lg hover:opacity-90 transition-opacity disabled:opacity-60 disabled:cursor-not-allowed"
             >
               {loading ? 'Signing in...' : 'Login'}

@@ -68,12 +68,12 @@ export default function Appointments() {
     <div>
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold" style={{ color: '#1E3A5F' }}>
+        <h1 className="text-2xl font-bold" style={{ color: '#1A0505' }}>
           Appointments
         </h1>
         <button
           onClick={() => setShowNewModal(true)}
-          style={{ backgroundColor: '#2E86AB' }}
+          style={{ backgroundColor: '#D4A847' }}
           className="flex items-center gap-2 text-white text-sm font-semibold px-4 py-3 rounded-lg hover:opacity-90 transition-opacity min-h-[44px]"
         >
           <Plus size={16} />
@@ -101,7 +101,7 @@ export default function Appointments() {
           <div className="hidden md:block bg-white rounded-xl shadow-sm overflow-hidden">
             <table className="w-full text-sm">
               <thead>
-                <tr style={{ backgroundColor: '#1E3A5F' }} className="text-white text-left">
+                <tr style={{ backgroundColor: '#1A0505' }} className="text-white text-left">
                   <th className="px-5 py-3 font-semibold">Client</th>
                   <th className="px-5 py-3 font-semibold">Service</th>
                   <th className="px-5 py-3 font-semibold">Staff</th>

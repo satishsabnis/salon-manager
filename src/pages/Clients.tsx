@@ -56,12 +56,12 @@ export default function Clients() {
     <div>
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold" style={{ color: '#1E3A5F' }}>
+        <h1 className="text-2xl font-bold" style={{ color: '#1A0505' }}>
           Clients
         </h1>
         <button
           onClick={() => setShowModal(true)}
-          style={{ backgroundColor: '#2E86AB' }}
+          style={{ backgroundColor: '#D4A847' }}
           className="flex items-center gap-2 text-white text-sm font-semibold px-4 py-3 rounded-lg hover:opacity-90 transition-opacity min-h-[44px]"
         >
           <Plus size={16} />
@@ -77,7 +77,7 @@ export default function Clients() {
           placeholder="Search clients by name..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="w-full pl-9 pr-4 py-2.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2E86AB] focus:border-transparent bg-white"
+          className="w-full pl-9 pr-4 py-2.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#D4A847] focus:border-transparent bg-white"
         />
         {search && (
           <button
@@ -114,7 +114,7 @@ export default function Clients() {
               {/* Name */}
               <div
                 className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-sm mb-3"
-                style={{ backgroundColor: '#2E86AB' }}
+                style={{ backgroundColor: '#D4A847' }}
               >
                 {client.name.charAt(0).toUpperCase()}
               </div>
@@ -193,7 +193,7 @@ function AddClientModal({ onClose, onSaved }: { onClose: () => void; onSaved: ()
   }
 
   const inputClass =
-    'w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#2E86AB] focus:border-transparent'
+    'w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#D4A847] focus:border-transparent'
   const labelClass = 'block text-sm font-medium text-gray-700 mb-1'
   const errorClass = 'text-xs text-red-500 mt-1'
 
@@ -203,7 +203,7 @@ function AddClientModal({ onClose, onSaved }: { onClose: () => void; onSaved: ()
       <div className="relative bg-white rounded-2xl shadow-xl w-full max-w-md">
         {/* Header */}
         <div
-          style={{ backgroundColor: '#1E3A5F' }}
+          style={{ backgroundColor: '#1A0505' }}
           className="flex items-center justify-between px-6 py-4 rounded-t-2xl"
         >
           <h2 className="text-white font-semibold text-base">Add Client</h2>
@@ -272,7 +272,7 @@ function AddClientModal({ onClose, onSaved }: { onClose: () => void; onSaved: ()
             <button
               type="submit"
               disabled={isSubmitting}
-              style={{ backgroundColor: '#2E86AB' }}
+              style={{ backgroundColor: '#D4A847' }}
               className="flex-1 text-white text-sm font-semibold py-2.5 rounded-lg hover:opacity-90 transition-opacity disabled:opacity-60 disabled:cursor-not-allowed"
             >
               {isSubmitting ? 'Saving...' : 'Save Client'}

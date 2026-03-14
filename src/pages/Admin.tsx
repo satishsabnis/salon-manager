@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 
 const SALON_ID = '11111111-1111-1111-1111-111111111111'
-const DARK = '#1E3A5F'
+const DARK = '#1A0505'
 const BORDER = '#E5E7EB'
 const MUTED = '#6B7280'
 

@@ -180,7 +180,7 @@ export default function DashboardHome() {
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
           <div className="flex items-center gap-2 mb-4">
             <div className="w-8 h-8 rounded-lg flex items-center justify-center text-white"
-              style={{ backgroundColor: '#2E86AB' }}>
+              style={{ backgroundColor: '#D4A847' }}>
               <CalendarDays size={16} />
             </div>
             <p className="text-sm font-bold text-gray-700">Today's Summary</p>
@@ -208,7 +208,7 @@ export default function DashboardHome() {
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
           <div className="flex items-center gap-2 mb-4">
             <div className="w-8 h-8 rounded-lg flex items-center justify-center text-white"
-              style={{ backgroundColor: '#1E3A5F' }}>
+              style={{ backgroundColor: '#1A0505' }}>
               <TrendingUp size={16} />
             </div>
             <p className="text-sm font-bold text-gray-700">Top This Week</p>
@@ -217,7 +217,7 @@ export default function DashboardHome() {
             <div>
               <div className="flex items-center gap-2 mb-3">
                 <span className="text-2xl leading-none">🏆</span>
-                <p className="text-base font-bold" style={{ color: '#1E3A5F' }}>{topStaff.name}</p>
+                <p className="text-base font-bold" style={{ color: '#1A0505' }}>{topStaff.name}</p>
               </div>
               <div className="space-y-2">
                 <div className="flex justify-between items-center">
@@ -268,7 +268,7 @@ export default function DashboardHome() {
 
       {/* ── Today's Appointments by Staff ── */}
       <div>
-        <h2 className="text-lg font-bold mb-4" style={{ color: '#1E3A5F' }}>
+        <h2 className="text-lg font-bold mb-4" style={{ color: '#1A0505' }}>
           Today's Appointments by Staff
         </h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
@@ -285,10 +285,10 @@ export default function DashboardHome() {
                 className="bg-white rounded-xl shadow-sm border border-gray-100 p-5 cursor-pointer hover:shadow-md hover:border-blue-200 transition-all group"
               >
                 <div className="flex items-center justify-between mb-3 pb-3 border-b border-gray-100">
-                  <h3 className="font-bold text-gray-800 group-hover:text-[#1E3A5F] transition-colors">
+                  <h3 className="font-bold text-gray-800 group-hover:text-[#1A0505] transition-colors">
                     {staff.name}
                   </h3>
-                  <ChevronRight size={16} className="text-gray-400 group-hover:text-[#2E86AB] transition-colors" />
+                  <ChevronRight size={16} className="text-gray-400 group-hover:text-[#D4A847] transition-colors" />
                 </div>
 
                 <div className="flex items-center gap-3 mb-4">
@@ -322,7 +322,7 @@ export default function DashboardHome() {
                             <button
                               onClick={(e) => { e.stopPropagation(); navigate(`/dashboard/clients/${appt.client_id}`) }}
                               className="text-sm font-semibold hover:underline truncate block text-left"
-                              style={{ color: '#2E86AB' }}
+                              style={{ color: '#D4A847' }}
                             >
                               {appt.clients?.name ?? 'Unknown'}
                             </button>
@@ -346,7 +346,7 @@ export default function DashboardHome() {
 
       {/* ── Upcoming Birthdays ── */}
       <div>
-        <h2 className="text-lg font-bold mb-4" style={{ color: '#1E3A5F' }}>
+        <h2 className="text-lg font-bold mb-4" style={{ color: '#1A0505' }}>
           Upcoming Birthdays
         </h2>
         {birthdayClients.length === 0 ? (
@@ -414,7 +414,7 @@ function RevenueRow({ label, amount, highlight = false }: {
       style={highlight ? { backgroundColor: '#F0F7FF' } : {}}>
       <span className={`text-xs ${highlight ? 'font-bold text-gray-700' : 'text-gray-500'}`}>{label}</span>
       <span className={`${highlight ? 'text-base font-bold' : 'text-sm font-semibold text-gray-700'}`}
-        style={highlight ? { color: '#1E3A5F' } : {}}>
+        style={highlight ? { color: '#1A0505' } : {}}>
         AED {amount.toFixed(2)}
       </span>
     </div>
