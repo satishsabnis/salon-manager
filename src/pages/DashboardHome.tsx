@@ -57,7 +57,7 @@ export default function DashboardHome() {
           .select('services(price)')
           .gte('start_time', monthStart)
           .lt('start_time', monthEnd)
-          .eq('status', 'completed'),
+          .neq('status', 'cancelled'),
         supabase.from('staff').select('id, name').order('name'),
         supabase
           .from('clients')
@@ -144,7 +144,7 @@ export default function DashboardHome() {
           {staffList.map((staff) => {
             const appts = todayAppointments.filter((a) => a.staff_id === staff.id)
             const todayRevenue = appts
-              .filter(a => a.status === 'completed')
+              .filter(a => a.status !== 'cancelled')
               .reduce((s, a) => s + (a.services?.price ?? 0), 0)
 
             return (

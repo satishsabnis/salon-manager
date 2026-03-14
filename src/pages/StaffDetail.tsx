@@ -112,8 +112,8 @@ export default function StaffDetail() {
 
   const nonCancelled = appointments.filter(a => a.status !== 'cancelled')
   const completed    = appointments.filter(a => a.status === 'completed')
-  const totalRevenue = completed.reduce((s, a) => s + (a.services?.price ?? 0), 0)
-  const avgRevenue   = completed.length > 0 ? totalRevenue / completed.length : 0
+  const totalRevenue = nonCancelled.reduce((s, a) => s + (a.services?.price ?? 0), 0)
+  const avgRevenue   = nonCancelled.length > 0 ? totalRevenue / nonCancelled.length : 0
 
   const fmt = (iso: string) => {
     try { return format(parseISO(iso), 'MMM d, yyyy · h:mm a') } catch { return iso }
@@ -225,11 +225,11 @@ export default function StaffDetail() {
                   </tr>
                 ))}
               </tbody>
-              {/* Revenue footer — completed only */}
+              {/* Revenue footer — excludes cancelled */}
               <tfoot>
                 <tr className="border-t-2 border-gray-200" style={{ backgroundColor: '#F0F7FF' }}>
                   <td colSpan={3} className="px-5 py-3 font-bold text-gray-700">
-                    Total Revenue (completed)
+                    Total Revenue (excl. cancelled)
                   </td>
                   <td className="px-5 py-3 text-right font-bold" style={{ color: '#1E3A5F' }}>
                     AED {totalRevenue.toFixed(2)}

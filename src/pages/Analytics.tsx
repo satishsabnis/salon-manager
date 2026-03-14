@@ -47,7 +47,8 @@ export default function Analytics() {
       const [appointmentsRes, clientsRes, topClientsRes] = await Promise.all([
         supabase
           .from('appointments')
-          .select('id, services(name, price)'),
+          .select('id, services(name, price)')
+          .neq('status', 'cancelled'),
         supabase
           .from('clients')
           .select('id', { count: 'exact', head: true }),
