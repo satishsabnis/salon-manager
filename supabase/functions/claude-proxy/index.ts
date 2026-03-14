@@ -29,24 +29,23 @@ serve(async (req) => {
         "anthropic-version": "2023-06-01",
       },
       body: JSON.stringify({
-        model: "claude-sonnet-4-20250514",
+        model: "claude-sonnet-4-6",
         max_tokens: 1000,
         system: systemPrompt,
         messages,
       }),
     });
 
-    const data = await response.json();
-
     if (!response.ok) {
-      return new Response(
-        JSON.stringify({ error: data.error?.message ?? `Anthropic error ${response.status}` }),
-        {
-          status: response.status,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        }
-      );
+      const errorText = await response.text();
+      console.error('Anthropic error:', response.status, errorText);
+      return new Response(JSON.stringify({ error: errorText }), {
+        status: response.status,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
+
+    const data = await response.json();
 
     return new Response(
       JSON.stringify({ text: data.content?.[0]?.text ?? "" }),

@@ -164,8 +164,14 @@ async function callClaude(
     body: { messages: history.slice(-10), systemPrompt },
   })
 
-  if (error) throw new Error(error.message)
-  if (data?.error) throw new Error(data.error)
+  if (error) {
+    console.error('Edge function error:', error)
+    throw new Error('AI Assistant is starting up, please try again in a moment')
+  }
+  if (data?.error) {
+    console.error('Claude API error:', data.error)
+    throw new Error(data.error)
+  }
 
   return data?.text ?? 'Sorry, I could not generate a response.'
 }
