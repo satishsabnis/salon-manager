@@ -9,6 +9,7 @@ import DashboardHome from './pages/DashboardHome'
 import StaffCalendar from './pages/StaffCalendar'
 import Admin from './pages/Admin'
 import AIAssistant from './pages/AIAssistant'
+import StaffDetail from './pages/StaffDetail'
 
 function App() {
   return (
@@ -26,6 +27,7 @@ function App() {
           <Route path="analytics" element={<Analytics />} />
           <Route path="admin" element={<Admin />} />
           <Route path="ai" element={<AIAssistant />} />
+          <Route path="staff/:id" element={<StaffDetail />} />
         </Route>
       </Routes>
     </BrowserRouter>
